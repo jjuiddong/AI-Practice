@@ -1,11 +1,11 @@
 //
 // Move And Action
 //
-
 #include "stdafx.h"
 #include "zealot.h"
 #include "zealotai.h"
 #include "move2.h"
+#include "attack.h"
 
 using namespace graphic;
 
@@ -67,7 +67,7 @@ bool cViewer::OnInit()
 
 	const float WINSIZE_X = float(m_windowRect.right - m_windowRect.left);
 	const float WINSIZE_Y = float(m_windowRect.bottom - m_windowRect.top);
-	m_camera.SetCamera(Vector3(-3, 3, -5), Vector3(0, 0, 0), Vector3(0, 1, 0));
+	m_camera.SetCamera(Vector3(-10, 12, -10), Vector3(0, 0, 0), Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 	m_camera.m_isMovingLimitation = true;
@@ -213,6 +213,21 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case VK_TAB: break;
 		case VK_RETURN: break;
+
+		case VK_SPACE: 
+		{
+			cAutoCam cam(&m_camera);
+
+			Vector3 orig, dir;
+			graphic::GetMainCamera().GetRay(m_curPos.x, m_curPos.y, orig, dir);
+			Vector3 p1 = m_groundPlane1.Pick(orig, dir);
+
+			ai::cAttack<cZealot> *action = new ai::cAttack<cZealot>(&m_zealot, p1);
+			m_zealot.m_ai->SetAction(action);
+
+			m_dest = p1;
+		}
+		break;
 		}
 		break;
 
@@ -224,18 +239,14 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 		SetCapture(m_hWnd);
 		m_LButtonDown = true;
-		m_curPos.x = LOWORD(lParam);
-		m_curPos.y = HIWORD(lParam);
+		m_curPos.x = pos.x;
+		m_curPos.y = pos.y;
 
 		Vector3 orig, dir;
 		graphic::GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
 		Vector3 p1 = m_groundPlane1.Pick(orig, dir);
 		m_moveLen = common::clamp(1, 100, (p1 - orig).Length());
 		graphic::GetMainCamera().MoveCancel();
-
-		ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(&m_zealot, p1);
-		m_zealot.m_ai->SetAction(action);
-		m_dest = p1;
 	}
 	break;
 
@@ -246,14 +257,23 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_RBUTTONDOWN:
 	{
+		cAutoCam cam(&m_camera);
+		POINT pos = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
+
 		SetCapture(m_hWnd);
 		m_RButtonDown = true;
-		m_curPos.x = LOWORD(lParam);
-		m_curPos.y = HIWORD(lParam);
+		m_curPos.x = pos.x;
+		m_curPos.y = pos.y;
 
-		Ray ray(m_curPos.x, m_curPos.y, 1024, 768,
-			GetMainCamera().GetProjectionMatrix(),
-			GetMainCamera().GetViewMatrix());
+		Vector3 orig, dir;
+		graphic::GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
+		Vector3 p1 = m_groundPlane1.Pick(orig, dir);
+		m_moveLen = common::clamp(1, 100, (p1 - orig).Length());
+		graphic::GetMainCamera().MoveCancel();
+
+		ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(&m_zealot, p1);
+		m_zealot.m_ai->SetAction(action);
+		m_dest = p1;
 	}
 	break;
 
@@ -298,8 +318,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 
-			m_curPos = pos;
-
 			Vector3 dir = graphic::GetMainCamera().GetDirection();
 			Vector3 right = graphic::GetMainCamera().GetRight();
 			dir.y = 0;
@@ -314,16 +332,16 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			const int x = pos.x - m_curPos.x;
 			const int y = pos.y - m_curPos.y;
-			m_curPos = pos;
 
-			graphic::GetMainCamera().Yaw2(x * 0.005f, Vector3(0, 1, 0));
-			graphic::GetMainCamera().Pitch2(y * 0.005f, Vector3(0, 1, 0));
+			if (GetAsyncKeyState(VK_LCONTROL)) {
+				graphic::GetMainCamera().Yaw2(x * 0.005f, Vector3(0, 1, 0));
+				graphic::GetMainCamera().Pitch2(y * 0.005f, Vector3(0, 1, 0));
+			}
 
 		}
 		else if (m_MButtonDown)
 		{
 			const sf::Vector2i point = { pos.x - m_curPos.x, pos.y - m_curPos.y };
-			m_curPos = pos;
 
 			const float len = graphic::GetMainCamera().GetDistance();
 			graphic::GetMainCamera().MoveRight(-point.x * len * 0.001f);
@@ -332,6 +350,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else
 		{
 		}
+
+		m_curPos = pos;
 	}
 	break;
 	}

@@ -179,6 +179,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="attack.h" />
     <ClInclude Include="move2.h" />
     <ClInclude Include="zealotai.h" />
     <ClInclude Include="stdafx.h" />

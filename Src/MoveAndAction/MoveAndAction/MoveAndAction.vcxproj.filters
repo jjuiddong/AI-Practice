@@ -13,6 +13,9 @@
     <ClInclude Include="move2.h">
       <Filter>ai</Filter>
     </ClInclude>
+    <ClInclude Include="attack.h">
+      <Filter>ai</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ai">
