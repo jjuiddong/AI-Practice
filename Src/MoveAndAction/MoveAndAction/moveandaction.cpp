@@ -18,13 +18,12 @@ public:
 	virtual bool OnInit() override;
 	virtual void OnUpdate(const float deltaSeconds) override;
 	virtual void OnRender(const float deltaSeconds) override;
-	virtual void OnShutdown() override;
 	virtual void OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam) override;
 	void ChangeWindowSize();
 
 
 public:
-	cCamera m_camera;
+	cCamera3D m_camera;
 	cGrid m_ground;
 	cZealot m_zealot;
 	Vector3 m_dest;
@@ -126,15 +125,11 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.m_dbgBox.SetBox(tfm);
 		m_renderer.m_dbgBox.Render(m_renderer);
 		m_renderer.RenderAxis();
+		m_renderer.RenderFPS();
 
 		m_renderer.EndScene();
 		m_renderer.Present();
 	}
-}
-
-
-void cViewer::OnShutdown()
-{
 }
 
 
@@ -190,19 +185,17 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 		float len = 0;
-		Vector3 orig, dir;
-		GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
-		Vector3 lookAt = m_groundPlane1.Pick(orig, dir);
-		len = (orig - lookAt).Length();
+		const Ray ray = GetMainCamera().GetRay(pos.x, pos.y);
+		Vector3 lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
+		len = (ray.orig - lookAt).Length();
 
-		//const float len = graphic::GetMainCamera().GetDistance();
 		float zoomLen = (len > 100) ? 50 : (len / 4.f);
 		if (fwKeys & 0x4)
 			zoomLen = zoomLen / 10.f;
 
-		Vector3 eyePos = GetMainCamera().m_eyePos + dir * ((zDelta <= 0) ? -zoomLen : zoomLen);
+		Vector3 eyePos = GetMainCamera().m_eyePos + ray.dir * ((zDelta <= 0) ? -zoomLen : zoomLen);
 		if (eyePos.y > 1)
-			GetMainCamera().Zoom(dir, (zDelta < 0) ? -zoomLen : zoomLen);
+			GetMainCamera().Zoom(ray.dir, (zDelta < 0) ? -zoomLen : zoomLen);
 
 		//graphic::GetMainCamera().Zoom((zDelta<0) ? -zoomLen : zoomLen);
 	}
@@ -218,9 +211,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			cAutoCam cam(&m_camera);
 
-			Vector3 orig, dir;
-			graphic::GetMainCamera().GetRay(m_curPos.x, m_curPos.y, orig, dir);
-			Vector3 p1 = m_groundPlane1.Pick(orig, dir);
+			const Ray ray = graphic::GetMainCamera().GetRay(m_curPos.x, m_curPos.y);
+			Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 
 			ai::cAttack<cZealot> *action = new ai::cAttack<cZealot>(&m_zealot, p1);
 			m_zealot.m_ai->SetAction(action);
@@ -242,10 +234,9 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		m_curPos.x = pos.x;
 		m_curPos.y = pos.y;
 
-		Vector3 orig, dir;
-		graphic::GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
-		Vector3 p1 = m_groundPlane1.Pick(orig, dir);
-		m_moveLen = common::clamp(1, 100, (p1 - orig).Length());
+		const Ray ray = graphic::GetMainCamera().GetRay(pos.x, pos.y);
+		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
+		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
 	}
 	break;
@@ -265,10 +256,9 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		m_curPos.x = pos.x;
 		m_curPos.y = pos.y;
 
-		Vector3 orig, dir;
-		graphic::GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
-		Vector3 p1 = m_groundPlane1.Pick(orig, dir);
-		m_moveLen = common::clamp(1, 100, (p1 - orig).Length());
+		const Ray ray = graphic::GetMainCamera().GetRay(pos.x, pos.y);
+		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
+		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
 
 		ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(&m_zealot, p1);
@@ -300,9 +290,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 		sf::Vector2i pos = { (int)LOWORD(lParam), (int)HIWORD(lParam) };
 
-		Vector3 orig, dir;
-		graphic::GetMainCamera().GetRay(pos.x, pos.y, orig, dir);
-		Vector3 p1 = m_groundPlane1.Pick(orig, dir);
+		const Ray ray = graphic::GetMainCamera().GetRay(pos.x, pos.y);
+		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 
 		if (wParam & 0x10) // middle button down
 		{
@@ -334,8 +323,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			const int y = pos.y - m_curPos.y;
 
 			if (GetAsyncKeyState(VK_LCONTROL)) {
-				graphic::GetMainCamera().Yaw2(x * 0.005f, Vector3(0, 1, 0));
-				graphic::GetMainCamera().Pitch2(y * 0.005f, Vector3(0, 1, 0));
+				m_camera.Yaw2(x * 0.005f, Vector3(0, 1, 0));
+				m_camera.Pitch2(y * 0.005f, Vector3(0, 1, 0));
 			}
 
 		}
