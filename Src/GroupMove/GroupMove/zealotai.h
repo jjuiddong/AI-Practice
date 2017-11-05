@@ -13,6 +13,4 @@ public:
 	cZealotAI(ai::iActorInterface<cZealot> *agent);
 	virtual ~cZealotAI();
 
-
-
 };

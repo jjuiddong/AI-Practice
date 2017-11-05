@@ -8,3 +8,9 @@ using namespace common;
 
 // 전역 어플리케이션 인스턴스
 extern framework::cGameMain* g_application;
+
+#include "move2.h"
+#include "patrol.h"
+#include "zealotgroup.h"
+#include "zealot.h"
+#include "zealotai.h"

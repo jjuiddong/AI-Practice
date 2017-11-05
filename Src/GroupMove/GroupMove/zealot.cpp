@@ -31,6 +31,14 @@ bool cZealot::Create(graphic::cRenderer &renderer)
 }
 
 
+void cZealot::InitModel(cRenderer &renderer)
+{
+	__super::InitModel(renderer);
+
+	m_boundingSphere.SetRadius(m_boundingSphere.GetRadius()*0.5f);
+}
+
+
 void cZealot::aiSetAnimation(const Str64 &animationName)
 {
 	SetAnimation(animationName);
@@ -67,7 +75,8 @@ bool cZealot::aiCollision(const cBoundingSphere &srcBSphere
 		cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
 		if (bsphere.Intersects(srcBSphere))
 		{
-			collisionSphrere = zealot->m_boundingSphere;
+			collisionSphrere = zealot->m_boundingSphere * zealot->m_transform;
+			collisionSphrere.SetPos(zealot->m_transform.pos); // 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
 			return true;
 		}
 	}

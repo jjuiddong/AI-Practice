@@ -4,14 +4,36 @@
     <ClCompile Include="groupmove.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="zealot.cpp" />
-    <ClCompile Include="zealotai.cpp" />
+    <ClCompile Include="zealotai.cpp">
+      <Filter>ai</Filter>
+    </ClCompile>
+    <ClCompile Include="zealotgroup.cpp">
+      <Filter>ai</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="attack.h" />
-    <ClInclude Include="move2.h" />
     <ClInclude Include="zealot.h" />
-    <ClInclude Include="zealotai.h" />
     <ClInclude Include="groupmove.h" />
+    <ClInclude Include="attack.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="move2.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="patrol.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="zealotai.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="zealotgroup.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ai">
+      <UniqueIdentifier>{e08c38bd-3d25-4f16-bd52-ce043431affe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

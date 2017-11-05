@@ -160,6 +160,7 @@
     </ClCompile>
     <ClCompile Include="zealot.cpp" />
     <ClCompile Include="zealotai.cpp" />
+    <ClCompile Include="zealotgroup.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Common\AI\AI.vcxproj">
@@ -182,9 +183,11 @@
     <ClInclude Include="attack.h" />
     <ClInclude Include="groupmove.h" />
     <ClInclude Include="move2.h" />
+    <ClInclude Include="patrol.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="zealot.h" />
     <ClInclude Include="zealotai.h" />
+    <ClInclude Include="zealotgroup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

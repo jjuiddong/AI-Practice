@@ -1,5 +1,6 @@
 #pragma once
 
+#include "zealotgroup.h"
 
 class cZealot;
 
@@ -20,8 +21,9 @@ public:
 	graphic::cCamera3D m_camera;
 	graphic::cGrid m_ground;
 
-	enum { MAX_PLAYER = 5 };
+	enum { MAX_PLAYER = 9 };
 	vector<cZealot*> m_zealots;
+	cGroup m_group;
 	Vector3 m_dest;
 
 	sf::Vector2i m_curPos;

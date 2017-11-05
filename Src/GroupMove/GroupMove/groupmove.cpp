@@ -7,6 +7,7 @@
 #include "zealotai.h"
 #include "move2.h"
 #include "attack.h"
+#include "patrol.h"
 
 using namespace graphic;
 
@@ -84,18 +85,37 @@ bool cViewer::OnInit()
 	cBoundingBox bbox2(Vector3(0, 0, 0), Vector3(1, 1, 1), Quaternion());
 	m_renderer.m_dbgAxis.SetAxis(bbox2, false);
 
+
+	Vector3 posArray[] = {
+		Vector3(5,0,5)
+		, Vector3(0,0,0)
+		, Vector3(10,0,0)
+		, Vector3(10,0,10)
+		, Vector3(0,0,10)
+		, Vector3(1,0,1)
+		, Vector3(11,0,0)
+		, Vector3(11,0,11)
+		, Vector3(0,0,11)
+	};
 	for (int i = 0; i < MAX_PLAYER; ++i)
 	{
 		cZealot *zealot = new cZealot();
 		zealot->Create(m_renderer);
 		zealot->m_name.Format("Zealot%d", i);
-		zealot->m_transform.pos = Vector3(3.f*i, 0, 0);
-
+		zealot->m_transform.pos = posArray[i];
 		m_zealots.push_back(zealot);
 	}
 
-	//ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(&m_zealot, Vector3(-3, 0, 0));
-	//m_zealot.m_ai->PushAction(action);
+	m_zealots[1]->m_ai->PushAction(new ai::cPatrol<cZealot>(m_zealots[1], posArray[3]));
+	m_zealots[2]->m_ai->PushAction(new ai::cPatrol<cZealot>(m_zealots[2], posArray[4]));
+	m_zealots[3]->m_ai->PushAction(new ai::cPatrol<cZealot>(m_zealots[3], posArray[1]));
+	m_zealots[4]->m_ai->PushAction(new ai::cPatrol<cZealot>(m_zealots[4], posArray[2]));
+
+
+	//for (auto &p : m_zealots)
+	for (int i=5; i < 9; ++i)
+		m_group.m_ai->AddActor(m_zealots[i]->m_ai);
+	m_group.m_ai->AddActor(m_zealots[0]->m_ai);
 
 	if (!g_dbgShmem.Init("DebugMonitorShmem::jjuiddong"))
 		assert(0);
@@ -236,9 +256,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			const Ray ray = graphic::GetMainCamera().GetRay(m_curPos.x, m_curPos.y);
 			Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 
-			//ai::cAttack<cZealot> *action = new ai::cAttack<cZealot>(&m_zealot, p1);
-			//m_zealot.m_ai->SetAction(action);
-
 			m_dest = p1;
 		}
 		break;
@@ -283,12 +300,14 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
 
-		for (auto &p : m_zealots)
-		{
-			ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(p, p1);
-			p->m_ai->SetAction(action);
-			break;
-		}
+		//for (auto &p : m_zealots)
+		//{
+		//	ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(p, p1);
+		//	p->m_ai->SetAction(action);
+		//	break;
+		//}
+
+		m_group.m_ai->Move(p1);
 
 		m_dest = p1;
 	}

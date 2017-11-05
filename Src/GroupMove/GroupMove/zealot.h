@@ -25,6 +25,10 @@ public:
 		, OUT graphic::cBoundingSphere &collisionSphrere) override;
 
 
+protected:
+	virtual void InitModel(graphic::cRenderer &renderer) override;
+
+
 public:
 	cZealotAI *m_ai;
 };
