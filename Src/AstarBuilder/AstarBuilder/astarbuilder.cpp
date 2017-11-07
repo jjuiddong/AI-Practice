@@ -1,5 +1,5 @@
 //
-// GroupMove
+// AStar Builder
 //
 #include "../../../../Common/Common/common.h"
 using namespace common;
@@ -40,11 +40,13 @@ public:
 
 
 public:
-	graphic::cCamera3D m_camera;
-	graphic::cGrid m_ground;
+	cCamera3D m_camera;
+	cGrid m_ground;
 	cImGui m_gui;
 	int m_editType;
-	vector<Vector3> m_vertices;
+	cTerrain2 m_terrain;
+	ai::cPathFinder m_pathFinder;
+	cDbgLineList m_lineList;
 
 	sf::Vector2i m_curPos;
 	Plane m_groundPlane1, m_groundPlane2;
@@ -62,7 +64,7 @@ cViewer::cViewer()
 	, m_camera("main camera")
 	, m_editType(0)
 {
-	m_windowName = L"Group Move";
+	m_windowName = L"Astar Builder";
 	//const RECT r = { 0, 0, 1024, 768 };
 	const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
@@ -109,7 +111,22 @@ bool cViewer::OnInit()
 	m_renderer.m_dbgAxis.SetAxis(bbox2, false);
 
 	m_gui.Init(m_hWnd, m_renderer.GetDevice(), m_renderer.GetDevContext(), NULL);
-	m_vertices.reserve(1024);
+
+	//m_terrain.Create()
+	cTerrainLoader loader(&m_terrain);
+	loader.Read(m_renderer, "astar.trn");
+	m_pathFinder.Read("../media/astar.txt");
+	m_lineList.Create(m_renderer, 1024);
+	for (auto &vtx : m_pathFinder.m_vertices)
+	{
+		for (int i = 0; i < ai::sVertex::MAX_EDGE; ++i)
+		{
+			if (vtx.edge[i] < 0)
+				break;
+			m_lineList.AddLine(m_renderer, vtx.pos + Vector3(0, 0.1f, 0)
+				, m_pathFinder.m_vertices[vtx.edge[i]].pos + Vector3(0, 0.1f, 0));
+		}
+	}
 
 	if (!g_dbgShmem.Init("DebugMonitorShmem::jjuiddong"))
 		assert(0);
@@ -138,13 +155,12 @@ void cViewer::OnRender(const float deltaSeconds)
 
 	m_gui.NewFrame();
 
-	static bool isOpen = true;
-	ImGui::Begin("Test", &isOpen, ImVec2(200,400));
-	ImGui::RadioButton("View", &m_editType, 0); ImGui::SameLine();
-	ImGui::RadioButton("Vertex", &m_editType, 1); ImGui::SameLine();
-	ImGui::RadioButton("Edge", &m_editType, 2);
-
-	ImGui::End();
+	//static bool isOpen = true;
+	//ImGui::Begin("Test", &isOpen, ImVec2(200,400));
+	//ImGui::RadioButton("View", &m_editType, 0); ImGui::SameLine();
+	//ImGui::RadioButton("Vertex", &m_editType, 1); ImGui::SameLine();
+	//ImGui::RadioButton("Edge", &m_editType, 2);
+	//ImGui::End();
 
 
 	// Render
@@ -154,16 +170,20 @@ void cViewer::OnRender(const float deltaSeconds)
 
 		GetMainCamera().Bind(m_renderer);
 		GetMainLight().Bind(m_renderer);
-		m_ground.Render(m_renderer);
+		m_terrain.Render(m_renderer);
 
-		for (auto &p : m_vertices)
+		// Render Path
+		m_renderer.m_dbgBox.m_color = cColor::WHITE;
+		for (auto &vtx : m_pathFinder.m_vertices)
 		{
-			Transform tfm;
-			tfm.pos = p;
-			tfm.scale = Vector3(1, 1, 1)*0.1f;
-			m_renderer.m_dbgBox.SetBox(tfm);
+			const cBoundingBox bbox(vtx.pos + Vector3(0, 0, 0)
+				, Vector3(1, 1, 1) * 0.2f
+				, Quaternion());
+			m_renderer.m_dbgBox.SetBox(bbox);
 			m_renderer.m_dbgBox.Render(m_renderer);
 		}
+		m_lineList.Render(m_renderer);
+
 
 		m_gui.Render();
 
@@ -279,11 +299,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		const Ray ray = graphic::GetMainCamera().GetRay(pos.x, pos.y);
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
-
-		if (m_editType == 1)
-		{
-			m_vertices.push_back(p1);
-		}
 	}
 	break;
 
