@@ -2,5 +2,18 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="astarbuilder.cpp" />
+    <ClCompile Include="zealot.cpp" />
+    <ClCompile Include="zealotai.cpp" />
+    <ClCompile Include="zealotgroup.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="attack.h" />
+    <ClInclude Include="move2.h" />
+    <ClInclude Include="patrol.h" />
+    <ClInclude Include="zealot.h" />
+    <ClInclude Include="zealotai.h" />
+    <ClInclude Include="zealotgroup.h" />
+    <ClInclude Include="stdafx.h" />
   </ItemGroup>
 </Project>

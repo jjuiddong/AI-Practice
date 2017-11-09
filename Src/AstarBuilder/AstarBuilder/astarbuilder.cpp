@@ -1,11 +1,8 @@
 //
 // AStar Builder
 //
-#include "../../../../Common/Common/common.h"
-using namespace common;
-#include "../../../../Common/Graphic11/graphic11.h"
-#include "../../../../Common/Framework11/framework11.h"
-
+#include "stdafx.h"
+#include "move2.h"
 
 using namespace graphic;
 
@@ -24,6 +21,7 @@ struct sSharedData
 sSharedData *g_sharedData = NULL;
 cShmmem g_dbgShmem;
 cMutex g_mutex("DebugMonitorMutex::jjuiddong");
+ai::cPathFinder g_pathFinder;
 
 
 class cViewer : public framework::cGameMain
@@ -44,9 +42,11 @@ public:
 	cGrid m_ground;
 	cImGui m_gui;
 	int m_editType;
-	cTerrain2 m_terrain;
-	ai::cPathFinder m_pathFinder;
+	cTerrain m_terrain;
 	cDbgLineList m_lineList;
+
+	enum { MAX_PLAYER = 1 };
+	vector<cZealot*> m_zealots;
 
 	sf::Vector2i m_curPos;
 	Plane m_groundPlane1, m_groundPlane2;
@@ -65,8 +65,8 @@ cViewer::cViewer()
 	, m_editType(0)
 {
 	m_windowName = L"Astar Builder";
-	//const RECT r = { 0, 0, 1024, 768 };
-	const RECT r = { 0, 0, 1280, 1024 };
+	const RECT r = { 0, 0, 1024, 768 };
+	//const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
 	m_moveLen = 0;
 	m_LButtonDown = false;
@@ -114,19 +114,40 @@ bool cViewer::OnInit()
 
 	//m_terrain.Create()
 	cTerrainLoader loader(&m_terrain);
-	loader.Read(m_renderer, "astar.trn");
-	m_pathFinder.Read("../media/astar.txt");
+	loader.Read(m_renderer, "../media2/astar.trn");
+	g_pathFinder.Read("../media2/astar.txt");
 	m_lineList.Create(m_renderer, 1024);
-	for (auto &vtx : m_pathFinder.m_vertices)
+	for (auto &vtx : g_pathFinder.m_vertices)
 	{
 		for (int i = 0; i < ai::sVertex::MAX_EDGE; ++i)
 		{
 			if (vtx.edge[i] < 0)
 				break;
 			m_lineList.AddLine(m_renderer, vtx.pos + Vector3(0, 0.1f, 0)
-				, m_pathFinder.m_vertices[vtx.edge[i]].pos + Vector3(0, 0.1f, 0));
+				, g_pathFinder.m_vertices[vtx.edge[i]].pos + Vector3(0, 0.1f, 0));
 		}
 	}
+
+	Vector3 posArray[] = {
+		Vector3(5,0,5)
+		, Vector3(0,0,0)
+		, Vector3(10,0,0)
+		, Vector3(10,0,10)
+		, Vector3(0,0,10)
+		, Vector3(1,0,1)
+		, Vector3(11,0,0)
+		, Vector3(11,0,11)
+		, Vector3(0,0,11)
+	};
+	for (int i = 0; i < MAX_PLAYER; ++i)
+	{
+		cZealot *zealot = new cZealot();
+		zealot->Create(m_renderer);
+		zealot->m_name.Format("Zealot%d", i);
+		zealot->m_transform.pos = posArray[i];
+		m_zealots.push_back(zealot);
+	}
+
 
 	if (!g_dbgShmem.Init("DebugMonitorShmem::jjuiddong"))
 		assert(0);
@@ -140,6 +161,9 @@ void cViewer::OnUpdate(const float deltaSeconds)
 {
 	cAutoCam cam(&m_camera);
 	GetMainCamera().Update(deltaSeconds);
+
+	for (auto &p : m_zealots)
+		p->Update(m_renderer, deltaSeconds);
 
 	// DbgMonitor
 	g_mutex.Lock();
@@ -174,7 +198,7 @@ void cViewer::OnRender(const float deltaSeconds)
 
 		// Render Path
 		m_renderer.m_dbgBox.m_color = cColor::WHITE;
-		for (auto &vtx : m_pathFinder.m_vertices)
+		for (auto &vtx : g_pathFinder.m_vertices)
 		{
 			const cBoundingBox bbox(vtx.pos + Vector3(0, 0, 0)
 				, Vector3(1, 1, 1) * 0.2f
@@ -184,6 +208,11 @@ void cViewer::OnRender(const float deltaSeconds)
 		}
 		m_lineList.Render(m_renderer);
 
+		for (auto &p : m_zealots)
+		{
+			p->SetTechnique("Unlit");
+			p->Render(m_renderer);
+		}
 
 		m_gui.Render();
 
@@ -321,6 +350,9 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
+
+		ai::cMove2<cZealot> *action = new ai::cMove2<cZealot>(m_zealots[0], p1);
+		m_zealots[0]->m_ai->SetAction(action);
 	}
 	break;
 
