@@ -1,0 +1,2 @@
+Error : Error LoadTextureParallel white.dds 
+Error : Err LoadAssimpModel zealot.fbx 

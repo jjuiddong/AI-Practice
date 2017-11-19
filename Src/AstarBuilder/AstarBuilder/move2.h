@@ -4,6 +4,7 @@
 //
 #pragma once
 
+
 namespace ai
 {
 
@@ -23,34 +24,15 @@ namespace ai
 		{
 			m_dest = dest;
 			m_rotateTime = 0;
-
-			//const Vector3 curPos = agent->aiGetTransform().pos;
-			//m_distance = curPos.LengthRoughly(m_dest);
-			//m_oldDistance = curPos.LengthRoughly(m_dest);
-			//m_dir = m_dest - curPos;
-			//m_dir.y = 0;
-			//m_dir.Normalize();
-
-			//Quaternion q;
-			//q.SetRotationArc(Vector3(0, 0, -1), m_dir);
-
-			//m_fromDir = agent->aiGetTransform().rot;
-			//m_toDir = q;
-			//m_rotateTime = 0;
-
-			//m_agent->aiGetTransform().rot = q;
 		}
 
 
 		virtual bool StartAction() override {
 			const Vector3 curPos = m_agent->aiGetTransform().pos;
-			//const float distance = curPos.Distance(m_dest);
-			//if (distance < 0.1f)
-			//	return false;
-			//m_agent->aiSetAnimation("Walk");
-
 			if (!g_pathFinder.Find(curPos, m_dest, m_path))
 				return false;
+
+			g_route = m_path;
 
 			m_idx = 0;
 			NextMove(0);
@@ -194,7 +176,6 @@ namespace ai
 			m_toDir = q;
 			m_rotateTime = 0;
 		}
-
 
 
 	public:

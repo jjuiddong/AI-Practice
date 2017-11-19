@@ -15,5 +15,6 @@
     <ClInclude Include="zealotai.h" />
     <ClInclude Include="zealotgroup.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="astarbuilder.h" />
   </ItemGroup>
 </Project>

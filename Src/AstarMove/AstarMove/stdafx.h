@@ -8,12 +8,10 @@ using namespace common;
 
 extern framework::cGameMain* g_application;
 
-//#include "move2.h"
-//#include "patrol.h"
-//#include "zealotgroup.h"
+#include "zealotgroup.h"
 #include "zealot.h"
 #include "zealotai.h"
-#include "astarbuilder.h"
+#include "astarmove.h"
 
 
 extern ai::cPathFinder g_pathFinder;
