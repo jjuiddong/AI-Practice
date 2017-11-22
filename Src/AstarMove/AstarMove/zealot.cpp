@@ -10,6 +10,7 @@ cZealot::cZealot()
 	: ai::iActorInterface<cZealot>(this)
 	, m_ai(NULL)
 	, m_isLoaded(false)
+	, m_collisionWall(NULL)
 {
 }
 

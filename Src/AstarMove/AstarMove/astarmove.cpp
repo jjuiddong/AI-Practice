@@ -163,7 +163,13 @@ void cViewer::OnUpdate(const float deltaSeconds)
 	for (auto &p : m_zealots)
 		p->Update(m_renderer, deltaSeconds);
 
-	g_dbgMonitor.UpdateApp(m_renderer);
+	//g_dbgMonitor.UpdateApp(m_renderer);
+	g_dbgMonitor.m_mutex.Lock();
+	g_dbgMonitor.m_sharedData->fps = ImGui::GetIO().Framerate;
+	g_dbgMonitor.m_sharedData->mousePos = m_pickPos;
+	m_renderer.m_isDbgRender = g_dbgMonitor.m_sharedData->isDbgRender;
+	m_renderer.m_dbgRenderStyle = g_dbgMonitor.m_sharedData->dbgRenderStyle;
+	g_dbgMonitor.m_mutex.Unlock();
 }
 
 
@@ -250,6 +256,8 @@ void cViewer::OnRender(const float deltaSeconds)
 			if (!zealot->m_isLoaded)
 				continue;
 
+			zealot->m_collisionWall = NULL;
+
 			cBoundingBox bbox1 = zealot->m_boundingBox;
 			bbox1 *= zealot->GetWorldMatrix();
 
@@ -258,7 +266,10 @@ void cViewer::OnRender(const float deltaSeconds)
 				cBoundingBox bbox2 = wall->m_boundingBox;
 				bbox2 *= wall->GetWorldMatrix();
 				if (bbox1.Collision(bbox2))
+				{
 					wall->m_color = cColor::RED;
+					zealot->m_collisionWall = wall;
+				}
 			}
 		}
 
@@ -444,6 +455,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 		const Ray ray = graphic::GetMainCamera().GetRay(pos.x, pos.y);
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
+		m_pickPos = p1;
 
 		if (wParam & 0x10) // middle button down
 		{

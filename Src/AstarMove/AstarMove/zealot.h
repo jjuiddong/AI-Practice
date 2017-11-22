@@ -33,6 +33,7 @@ protected:
 public:
 	cZealotAI *m_ai;
 	bool m_isLoaded;
+	graphic::cCube *m_collisionWall;
 
 	// for debugging
 	vector<Vector3> m_route;

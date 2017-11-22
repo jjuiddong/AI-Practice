@@ -23,12 +23,13 @@ public:
 	graphic::cDbgLineList m_lineList;
 	vector<graphic::cRect3D*> m_areas; // reference
 
-	enum { MAX_PLAYER = 5 };
+	enum { MAX_PLAYER = 1 };
 	vector<cZealot*> m_zealots;
 	vector<graphic::cCube*> m_walls;
 
 	cGroup m_group;
 
+	Vector3 m_pickPos;
 	sf::Vector2i m_curPos;
 	Plane m_groundPlane1, m_groundPlane2;
 	float m_moveLen;

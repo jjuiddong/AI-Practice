@@ -76,9 +76,25 @@ namespace ai
 			// 충돌 체크
 			graphic::cBoundingSphere bsphere = m_agent->m_ptr->m_boundingSphere * m_agent->aiGetTransform();
 			graphic::cBoundingSphere out;
-			if (graphic::cNode *collisionNode = m_agent->aiCollision(bsphere, out))
+			graphic::cNode *collisionNode = m_agent->m_ptr->m_collisionWall;
+			if (collisionNode)
+			{
+				out = collisionNode->m_boundingSphere * collisionNode->GetWorldTransform();
+				// 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
+				Vector3 pos = collisionNode->GetWorldTransform().pos;
+				pos.y = curPos.y;
+				out.SetPos(pos);
+			}
+			else
+			{
+				collisionNode = m_agent->aiCollision(bsphere, out);
+			}
+
+			//if (graphic::cNode *collisionNode = m_agent->aiCollision(bsphere, out))
+			if (collisionNode)
 			{
 				bool isMoveCollision = false;
+				bool isWallCollision = false;
 				Vector3 opponentDir;
 				if (cZealot *zealot = dynamic_cast<cZealot*>(collisionNode))
 				{
@@ -90,6 +106,10 @@ namespace ai
 							opponentDir = movAction->m_dir;
 						}
 					}
+				}
+				else
+				{
+					isWallCollision = true;
 				}
 
 				Vector3 toMe = (pos - out.GetPos()).Normal();
@@ -115,7 +135,7 @@ namespace ai
 
 				// 잠깐 대기할 경우 이거나,
 				// 충돌 객체와 멀어지는 상황일 경우, 방향을 선회하지 않는다.
-				if (isWait || (toMe.DotProduct(toDest) >= 0))
+				if (!isWallCollision && (isWait || (toMe.DotProduct(toDest) >= 0)))
 				{
 					// Nothing~
 				}
