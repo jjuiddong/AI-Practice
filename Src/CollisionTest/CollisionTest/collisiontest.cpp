@@ -33,6 +33,7 @@ public:
 	cCube m_cube2;
 	cSphere m_sphere;
 	cSphere m_sphere2; // Collision Position
+	cSphere m_sphere3;
 	bool m_isCollisionPosition;
 
 	sf::Vector2i m_curPos;
@@ -87,7 +88,7 @@ bool cViewer::OnInit()
 
 	{
 		cBoundingBox bbox;
-		bbox.SetBoundingBox(Vector3(1, 0.3f, -2), Vector3(.2f, 0.2f, 3.f), Quaternion());
+		bbox.SetBoundingBox(Vector3(1, 0.3f, -2), Vector3(3.f, 0.2f, .2f), Quaternion());
 		m_cube2.Create(m_renderer, bbox, eVertexType::POSITION | eVertexType::NORMAL);
 	}
 
@@ -97,6 +98,11 @@ bool cViewer::OnInit()
 	m_sphere.m_boundingSphere.SetRadius(0.5f);
 
 	m_sphere2.Create(m_renderer, 0.1f, 10, 10);
+
+	m_sphere3.Create(m_renderer, 0.5f, 10, 10);
+	m_sphere3.m_transform.pos = Vector3(-3.5f, 0, -3.5f);
+	m_sphere3.m_boundingSphere.SetPos(m_sphere3.m_transform.pos);
+	m_sphere3.m_boundingSphere.SetRadius(0.5f);
 
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL);
 	const Vector3 lightPos(-400, 600, -300);
@@ -128,7 +134,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		static float t = 0;
 		t += deltaSeconds;
 		m_cube1.m_transform.rot.SetRotationY(t);
-		m_cube2.m_transform.rot.SetRotationY(t + 1.f);
+		m_cube2.m_transform.rot.SetRotationY(t * 1.5f);
 
 		cBoundingBox bbox1 = m_cube1.m_boundingBox;
 		bbox1 *= m_cube1.GetWorldMatrix();
@@ -158,6 +164,17 @@ void cViewer::OnRender(const float deltaSeconds)
 			isSphereCollision = true;
 		}
 
+		bool isSphereCollision2 = false;
+		if (bbox1.Collision2D(m_sphere3.m_boundingSphere))
+		{
+			isSphereCollision2 = true;
+		}
+
+		if (!isSphereCollision2 && bbox2.Collision(m_sphere3.m_boundingSphere))
+		{
+			isSphereCollision2 = true;
+		}
+
 		Vector3 collisionPos;
 		m_isCollisionPosition = false;
 
@@ -174,7 +191,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		}
 
 
-		if (isSphereCollision)
+		if (isSphereCollision || m_isCollisionPosition)
 		{
 			m_sphere.m_mtrl.m_diffuse = Vector4(1, 0, 0, 1);
 		}
@@ -183,12 +200,22 @@ void cViewer::OnRender(const float deltaSeconds)
 			m_sphere.m_mtrl.m_diffuse = Vector4(1, 1, 1, 1);
 		}
 
+		if (isSphereCollision2)
+		{
+			m_sphere3.m_mtrl.m_diffuse = Vector4(1, 0, 0, 1);
+		}
+		else
+		{
+			m_sphere3.m_mtrl.m_diffuse = Vector4(1, 1, 1, 1);
+		}
+
 		CommonStates state(m_renderer.GetDevice());
 		m_renderer.GetDevContext()->RSSetState(state.Wireframe());
 		m_ground.Render(m_renderer);
 		m_cube1.Render(m_renderer);
 		m_cube2.Render(m_renderer);
 		m_sphere.Render(m_renderer);
+		m_sphere3.Render(m_renderer);
 
 		if (m_isCollisionPosition)
 			m_sphere2.Render(m_renderer);
