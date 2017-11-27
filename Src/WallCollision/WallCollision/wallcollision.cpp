@@ -1,5 +1,5 @@
 //
-// Collision Test
+// Wall Collision Test
 //
 
 #include "../../../../Common/Common/common.h"
@@ -26,14 +26,13 @@ public:
 
 
 public:
-	cCamera3D m_terrainCamera;
+	cCamera3D m_camera;
 	cGrid m_ground;
 
 	cCube m_cube1;
 	cCube m_cube2;
 	cSphere m_sphere;
 	cSphere m_sphere2; // Collision Position
-	cSphere m_sphere3;
 	bool m_isCollisionPosition;
 
 	sf::Vector2i m_curPos;
@@ -49,10 +48,10 @@ INIT_FRAMEWORK(cViewer);
 
 cViewer::cViewer()
 	: m_groundPlane1(Vector3(0, 1, 0), 0)
-	, m_terrainCamera("main camera")
+	, m_camera("main camera")
 	, m_isCollisionPosition(false)
 {
-	m_windowName = L"AI Collision Test";
+	m_windowName = L"AI Wall Collision Test";
 	//const RECT r = { 0, 0, 1024, 768 };
 	const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
@@ -72,9 +71,9 @@ bool cViewer::OnInit()
 {
 	const float WINSIZE_X = m_windowRect.right - m_windowRect.left;
 	const float WINSIZE_Y = m_windowRect.bottom - m_windowRect.top;
-	m_terrainCamera.SetCamera(Vector3(-3, 10, -10), Vector3(0, 0, 0), Vector3(0, 1, 0));
-	m_terrainCamera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
-	m_terrainCamera.SetViewPort(WINSIZE_X, WINSIZE_Y);
+	m_camera.SetCamera(Vector3(-3, 10, -10), Vector3(0, 0, 0), Vector3(0, 1, 0));
+	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
+	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
 	m_ground.Create(m_renderer, 10, 10, 1, 1, eVertexType::POSITION | eVertexType::NORMAL);
 	m_ground.m_isLineDrawing = true;
@@ -93,16 +92,10 @@ bool cViewer::OnInit()
 	}
 
 	m_sphere.Create(m_renderer, 0.5f, 10, 10);
-	m_sphere.m_transform.pos = Vector3(-1.5f, 0, -1.5f);
-	m_sphere.m_boundingSphere.SetPos(m_sphere.m_transform.pos);
+	m_sphere.m_transform.pos = Vector3(-1.f, 0, -1.f);
 	m_sphere.m_boundingSphere.SetRadius(0.5f);
 
 	m_sphere2.Create(m_renderer, 0.1f, 10, 10);
-
-	m_sphere3.Create(m_renderer, 0.5f, 10, 10);
-	m_sphere3.m_transform.pos = Vector3(-3.5f, 0, -3.5f);
-	m_sphere3.m_boundingSphere.SetPos(m_sphere3.m_transform.pos);
-	m_sphere3.m_boundingSphere.SetRadius(0.5f);
 
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL);
 	const Vector3 lightPos(-400, 600, -300);
@@ -121,7 +114,7 @@ void cViewer::OnUpdate(const float deltaSeconds)
 
 void cViewer::OnRender(const float deltaSeconds)
 {
-	cMainCamera::Get()->PushCamera(&m_terrainCamera);
+	cAutoCam cam(&m_camera);
 
 	// Render
 	if (m_renderer.ClearScene())
@@ -136,62 +129,38 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_cube1.m_transform.rot.SetRotationY(t);
 		m_cube2.m_transform.rot.SetRotationY(t * 1.5f);
 
+		// Sphere Move to Center
+		const Vector3 mov = -m_sphere.m_transform.pos.Normal() * 3 * deltaSeconds;
+		m_sphere.m_transform.pos += mov;
+
 		cBoundingBox bbox1 = m_cube1.m_boundingBox;
 		bbox1 *= m_cube1.GetWorldMatrix();
 
 		cBoundingBox bbox2 = m_cube2.m_boundingBox;
 		bbox2 *= m_cube2.GetWorldMatrix();
 
-		if (bbox1.Collision(bbox2))
-		{
-			m_cube1.m_color = cColor::RED;
-			m_cube2.m_color = cColor::RED;
-		}
-		else
-		{
-			m_cube1.m_color = cColor::WHITE;
-			m_cube2.m_color = cColor::WHITE;
-		}
-
-		bool isSphereCollision = false;
-		if (bbox1.Collision(m_sphere.m_boundingSphere))
-		{
-			isSphereCollision = true;
-		}
-
-		if (!isSphereCollision && bbox2.Collision(m_sphere.m_boundingSphere))
-		{
-			isSphereCollision = true;
-		}
-
-		bool isSphereCollision2 = false;
-		if (bbox1.Collision2D(m_sphere3.m_boundingSphere))
-		{
-			isSphereCollision2 = true;
-		}
-
-		if (!isSphereCollision2 && bbox2.Collision(m_sphere3.m_boundingSphere))
-		{
-			isSphereCollision2 = true;
-		}
-
 		Vector3 collisionPos;
+		Plane collisionPlane;
 		m_isCollisionPosition = false;
 
-		if (bbox1.Collision2D(m_sphere.m_boundingSphere, &collisionPos))
+		const float reflectLen = 0.01f;
+		cBoundingSphere bsphere = m_sphere.m_boundingSphere;
+		bsphere.SetPos(m_sphere.m_transform.pos);
+		if (bbox1.Collision2D(bsphere, &collisionPos, &collisionPlane))
 		{
 			m_isCollisionPosition = true;
 			m_sphere2.m_transform.pos = collisionPos;
+			m_sphere.m_transform.pos = collisionPos + collisionPlane.N * (m_sphere.GetRadius()+ reflectLen);
 		}
 
-		if (bbox2.Collision2D(m_sphere.m_boundingSphere, &collisionPos))
+		if (bbox2.Collision2D(bsphere, &collisionPos, &collisionPlane))
 		{
 			m_isCollisionPosition = true;
 			m_sphere2.m_transform.pos = collisionPos;
+			m_sphere.m_transform.pos = collisionPos + collisionPlane.N * (m_sphere.GetRadius() + reflectLen);
 		}
 
-
-		if (isSphereCollision || m_isCollisionPosition)
+		if (m_isCollisionPosition)
 		{
 			m_sphere.m_mtrl.m_diffuse = Vector4(1, 0, 0, 1);
 		}
@@ -200,22 +169,12 @@ void cViewer::OnRender(const float deltaSeconds)
 			m_sphere.m_mtrl.m_diffuse = Vector4(1, 1, 1, 1);
 		}
 
-		if (isSphereCollision2)
-		{
-			m_sphere3.m_mtrl.m_diffuse = Vector4(1, 0, 0, 1);
-		}
-		else
-		{
-			m_sphere3.m_mtrl.m_diffuse = Vector4(1, 1, 1, 1);
-		}
-
 		CommonStates state(m_renderer.GetDevice());
 		m_renderer.GetDevContext()->RSSetState(state.Wireframe());
 		m_ground.Render(m_renderer);
 		m_cube1.Render(m_renderer);
 		m_cube2.Render(m_renderer);
 		m_sphere.Render(m_renderer);
-		m_sphere3.Render(m_renderer);
 
 		if (m_isCollisionPosition)
 			m_sphere2.Render(m_renderer);
@@ -225,15 +184,13 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.EndScene();
 		m_renderer.Present();
 	}
-
-	cMainCamera::Get()->PopCamera();
 }
 
 
 void cViewer::OnLostDevice()
 {
 	m_renderer.ResetDevice(0, 0, true);
-	m_terrainCamera.SetViewPort(m_renderer.m_viewPort.GetWidth(), m_renderer.m_viewPort.GetHeight());
+	m_camera.SetViewPort(m_renderer.m_viewPort.GetWidth(), m_renderer.m_viewPort.GetHeight());
 }
 
 
@@ -247,16 +204,13 @@ void cViewer::ChangeWindowSize()
 	if (m_renderer.CheckResetDevice())
 	{
 		m_renderer.ResetDevice();
-		m_terrainCamera.SetViewPort(m_renderer.m_viewPort.GetWidth(), m_renderer.m_viewPort.GetHeight());
-		//m_renderer.GetDevice()->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
+		m_camera.SetViewPort(m_renderer.m_viewPort.GetWidth(), m_renderer.m_viewPort.GetHeight());
 	}
 }
 
 
 void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	//framework::cInputManager::Get()->MouseProc(message, wParam, lParam);
-
 	static bool maximizeWnd = false;
 	switch (message)
 	{
@@ -289,7 +243,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEWHEEL:
 	{
-		cMainCamera::Get()->PushCamera(&m_terrainCamera);
+		cAutoCam cam(&m_camera);
 
 		int fwKeys = GET_KEYSTATE_WPARAM(wParam);
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
@@ -301,8 +255,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			zoomLen = zoomLen / 10.f;
 
 		graphic::GetMainCamera().Zoom((zDelta<0) ? -zoomLen : zoomLen);
-
-		cMainCamera::Get()->PopCamera();
 	}
 	break;
 
@@ -328,8 +280,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_LBUTTONDOWN:
 	{
-		cMainCamera::Get()->PushCamera(&m_terrainCamera);
-
+		cAutoCam cam(&m_camera);
 		POINT pos = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
 
 		SetCapture(m_hWnd);
@@ -341,8 +292,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
-
-		cMainCamera::Get()->PopCamera();
 	}
 	break;
 
@@ -383,8 +332,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_MOUSEMOVE:
 	{
-		cMainCamera::Get()->PushCamera(&m_terrainCamera);
-
+		cAutoCam cam(&m_camera);
 		sf::Vector2i pos = { (int)LOWORD(lParam), (int)HIWORD(lParam) };
 
 		if (wParam & 0x10) // middle button down
@@ -397,10 +345,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			const int y = pos.y - m_curPos.y;
 
 			if ((abs(x) > 1000) || (abs(y) > 1000))
-			{
-				cMainCamera::Get()->PopCamera();
 				break;
-			}
 
 			m_curPos = pos;
 
@@ -420,8 +365,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			const int y = pos.y - m_curPos.y;
 			m_curPos = pos;
 
-			m_terrainCamera.Yaw2(x * 0.005f);
-			m_terrainCamera.Pitch2(y * 0.005f);
+			m_camera.Yaw2(x * 0.005f);
+			m_camera.Pitch2(y * 0.005f);
 
 		}
 		else if (m_MButtonDown)
@@ -436,8 +381,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else
 		{
 		}
-
-		cMainCamera::Get()->PopCamera();
 	}
 	break;
 	}

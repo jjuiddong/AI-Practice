@@ -47,8 +47,6 @@ bool cViewer::OnInit()
 	m_camera.SetCamera(Vector3(-10, 30, -10), Vector3(10, 0, 10), Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
-	m_camera.m_isMovingLimitation = true;
-	m_camera.m_boundingHSphere.SetBoundingHalfSphere(Vector3(0, 0, 0), 500);
 
 	m_ground.Create(m_renderer, 100, 100, 1, eVertexType::POSITION);
 	m_ground.m_mtrl.InitGray();
@@ -485,8 +483,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			const int x = pos.x - m_curPos.x;
 			const int y = pos.y - m_curPos.y;
-
-			if (GetAsyncKeyState(VK_LCONTROL) || (PAUSE == m_state))
+			if ( (PAUSE == m_state))
 			{
 				m_camera.Yaw2(x * 0.005f, Vector3(0, 1, 0));
 				m_camera.Pitch2(y * 0.005f, Vector3(0, 1, 0));
@@ -495,7 +492,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else if (m_MButtonDown)
 		{
 			const sf::Vector2i point = { pos.x - m_curPos.x, pos.y - m_curPos.y };
-
 			const float len = graphic::GetMainCamera().GetDistance();
 			graphic::GetMainCamera().MoveRight(-point.x * len * 0.001f);
 			graphic::GetMainCamera().MoveUp(point.y * len * 0.001f);
