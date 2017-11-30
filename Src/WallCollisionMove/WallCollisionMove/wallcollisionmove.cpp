@@ -34,6 +34,8 @@ public:
 	cSphere m_sphere;
 	cSphere m_sphere2; // Collision Position
 	bool m_isCollisionPosition;
+	Vector3 m_collisionPlanVtx1;
+	Vector3 m_collisionPlanVtx2;
 
 	// move state
 	int m_curIdx;
@@ -243,7 +245,8 @@ void cViewer::OnRender(const float deltaSeconds)
 
 		for (auto bbox : bboxes)
 		{
-			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane))
+			Vector3 vertexPos1, vertexPos2;
+			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane, &vertexPos1, &vertexPos2))
 			{
  				m_isCollisionPosition = true;
 				m_sphere2.m_transform.pos = collisionPos;
@@ -259,6 +262,9 @@ void cViewer::OnRender(const float deltaSeconds)
 				const Vector3 leftV = -rightV;
 				const Vector3 movDir = (reflectDir.DotProduct(rightV) >= 0) ? rightV : leftV;
 				const Vector3 newPos = pos + movDir * 10.5f;
+
+				m_collisionPlanVtx1 = vertexPos1;
+				m_collisionPlanVtx2 = vertexPos2;
 				
 				m_path.clear();
 				m_path.push_back(m_dest);
@@ -289,6 +295,12 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_cube3.Render(m_renderer);
 		m_cube3.m_color = cColor::BLUE;
 		m_cube3.m_transform.pos = dest;
+		m_cube3.Render(m_renderer);
+
+		m_cube3.m_color = cColor::GREEN;
+		m_cube3.m_transform.pos = m_collisionPlanVtx1;
+		m_cube3.Render(m_renderer);
+		m_cube3.m_transform.pos = m_collisionPlanVtx2;
 		m_cube3.Render(m_renderer);
 
 		m_sphere.Render(m_renderer);

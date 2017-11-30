@@ -25,6 +25,21 @@ public:
 	void ChangeWindowSize();
 
 
+protected:
+	std::pair<bool, float> RecursiveCheck_Collision(const Vector3 &curPos, const Vector3 &movDir
+		, const Vector3 &dest, const float totalMovLen, const int cnt);
+
+	std::pair<bool, float> RecursiveCheck_Move(const Vector3 &curPos, const Vector3 &movDir
+		, const Vector3 &dest, const float totalMovLen, const int cnt);
+
+	std::pair<bool, float> RecursiveCheck_Ray(const Vector3 &curPos, const Vector3 &nextPos
+		, const Vector3 &dest, const float totalMovLen, const int cnt);
+
+	bool IsPassThrough(const Vector3 &curPos, const Vector3 &dir);
+	std::pair<cNode*,float> GetNearestWall(const Vector3 &curPos, const Vector3 &nextPos);
+	
+
+
 public:
 	cCamera3D m_camera;
 	cCube m_cube3;
@@ -246,20 +261,46 @@ void cViewer::OnRender(const float deltaSeconds)
 		{
 			cBoundingBox bbox = wall->m_boundingBox;
 			bbox *= wall->GetWorldMatrix();
-			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane))
+
+			Vector3 collisionVertex1, collisionVertex2;
+			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane
+				, &collisionVertex1, &collisionVertex2))
 			{
 				m_isCollisionPosition = true;
 				m_sphere2.m_transform.pos = collisionPos;
-				const Vector3 pos = collisionPos + collisionPlane.N * (m_sphere.GetRadius() + reflectLen);
-				const Matrix44 ref = collisionPlane.GetReflectMatrix();
-				const Vector3 reflectDir = m_dir.MultiplyNormal(ref);
+				const Vector3 cpos = collisionPos + collisionPlane.N * (m_sphere.GetRadius() + reflectLen);
+				//const Matrix44 ref = collisionPlane.GetReflectMatrix();
+				//const Vector3 reflectDir = m_dir.MultiplyNormal(ref);
 
-				// 벽의 면을 따라 이동한다. 
-				// 벽이 사라지면, 목적지로 선회한다.
-				const Vector3 rightV = Vector3(0, 1, 0).CrossProduct(collisionPlane.N).Normal();
-				const Vector3 leftV = -rightV;
-				const Vector3 movDir = (reflectDir.DotProduct(rightV) >= 0) ? rightV : leftV;
-				const Vector3 newPos = pos + movDir * 10.5f;
+				// 꼭지점보다 구의 지름만큼 더 가서 선회한다.
+				Vector3 v1 = (collisionVertex1 - collisionPos);
+				const float len1 = v1.Length();
+				v1.Normalize();
+				Vector3 v2 = (collisionVertex2 - collisionPos);
+				const float len2 = v2.Length();
+				v2.Normalize();
+
+				const Vector3 nv1 = (v1.IsEmpty()) ? -v2 : v1;
+				const Vector3 nv2 = (v2.IsEmpty()) ? -v1 : v2;
+				const Vector3 nextPos1 = cpos + nv1 * (len1 + m_sphere.GetRadius() * 2.f);
+				const Vector3 nextPos2 = cpos + nv2 * (len2 + m_sphere.GetRadius() * 2.f);
+
+				const std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, m_dest, 0.f, 5);
+				const std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, m_dest, 0.f, 5);
+				
+				Vector3 newPos;
+				if (r1.first && r2.first)
+				{
+					newPos = (r1.second < r2.second) ? nextPos1 : nextPos2;
+				}
+				else if (r1.first || r2.first)
+				{
+					newPos = r1.first ? nextPos1 : nextPos2;
+				}
+				else
+				{
+					newPos = (r1.second < r2.second) ? nextPos1 : nextPos2;
+				}
 
 				m_path.clear();
 				m_path.push_back(m_dest);
@@ -300,6 +341,285 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.EndScene();
 		m_renderer.Present();
 	}
+}
+
+
+// curPos에서 dest까지 도착하는데 필요한 가장 짧은 거리를, 재귀적으로 검색해서, 리턴한다.
+// 못찾으면, false, 이동거리+목적지까지거리 를 리턴한다.
+// 찾으면, true, 이동거리 를 리턴한다.
+// cnt 만큼 반복한다.
+std::pair<bool, float> cViewer::RecursiveCheck_Ray(const Vector3 &curPos, const Vector3 &nextPos
+	, const Vector3 &dest, const float totalMovLen, const int cnt)
+{
+	if (curPos.LengthRoughly(dest) < 0.1f)
+		return{ true, totalMovLen };
+
+	if (cnt <= 0)
+		return{ false, totalMovLen + curPos.Distance(dest) };
+
+	auto result = GetNearestWall(curPos, nextPos);
+	float nearDist = result.second;
+	cNode *nearWall = result.first;
+
+	const Ray ray(curPos, (nextPos - curPos).Normal());
+
+	// 벽과 충돌 했을 때.
+	if (nearWall)
+	{
+		const float nextMoveLen = curPos.Distance(nextPos);
+		if (nextMoveLen < nearDist)
+		{
+			// 벽과 충돌 없이 nextPos에 도착했을 때.
+			// 다음 목적지를 검사한다.
+			return RecursiveCheck_Ray(nextPos, dest, dest, totalMovLen + curPos.Distance(nextPos), cnt - 1);
+		}
+		else
+		{
+			if (nearDist <= 0)
+			{
+				// 벽이 바로 앞에 있을 경우에는, 경로에서 제외 시킨다.
+				dbg::Log("end of path\n");
+				return{ false, FLT_MAX };
+			}
+
+			// nextPos로 가는 도중에 벽과 부딪쳤을 때.
+			// 부딪친 위치에서 목적지로 선회 한다.
+			const float reflectLen = 0.1f;
+			cBoundingSphere bsphere = m_sphere.m_boundingSphere;
+
+			const Vector3 pos = curPos + ray.dir * (nearDist - (m_sphere.GetRadius()/10.f));
+			bsphere.SetPos(pos);
+
+			cBoundingBox bbox = nearWall->m_boundingBox;
+			bbox *= nearWall->GetWorldMatrix();
+			
+			Vector3 collisionPos, collisionVertex1, collisionVertex2;
+			Plane collisionPlane;
+			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane
+				, &collisionVertex1, &collisionVertex2))
+			{
+				// 벽과 충돌 했다면,
+				// 벽의 면을 따라 이동한다. (왼쪽 or 오른쪽)
+				// 목적지에 가까운 경로의 거리를 리턴한다.
+				const Vector3 cpos = collisionPos + collisionPlane.N * (m_sphere.GetRadius() + reflectLen);
+				const Vector3 leftV = Vector3(0, 1, 0).CrossProduct(collisionPlane.N).Normal();
+				const Vector3 rightV = -leftV;
+
+				// 꼭지점보다 구의 지름만큼 더 가서 선회한다.
+				Vector3 v1 = (collisionVertex1 - collisionPos);
+				const float len1 = v1.Length();
+				v1.Normalize();
+				Vector3 v2 = (collisionVertex2 - collisionPos);
+				const float len2 = v2.Length();
+				v2.Normalize();
+
+				const Vector3 nv1 = (v1.IsEmpty()) ? -v2 : v1;
+				const Vector3 nv2 = (v2.IsEmpty()) ? -v1 : v2;
+				const Vector3 nextPos1 = cpos + nv1 * (len1 + m_sphere.GetRadius() * 2.f);
+				const Vector3 nextPos2 = cpos + nv2 * (len2 + m_sphere.GetRadius() * 2.f);
+
+				std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, dest, totalMovLen + nearDist, cnt - 1);
+				std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, dest, totalMovLen + nearDist, cnt - 1);
+
+				if (r1.first && r2.first)
+				{
+					return{ true, min(r1.second, r2.second) };
+				}
+				else if (r1.first || r2.first)
+				{
+					return{ true, r1.first ? r1.second : r2.second };
+				}
+				else
+				{
+					return{ false, min(r1.second, r2.second) };
+				}
+			}
+		}
+	}
+	else
+	{
+		// 벽과 충돌없이 nextPos에 도착했을 때.
+		// 다음 목적지를 검사한다.
+		return RecursiveCheck_Ray(nextPos, dest, dest, totalMovLen + curPos.Distance(nextPos), cnt-1);
+	}
+
+	return{false, FLT_MAX};
+}
+
+
+// cnt가 0보다 클때까지 재귀호출한다.
+// 목적지까지의 이동 거리를 리턴한다. (작은 값이 더 나은 경로다.)
+std::pair<bool, float> cViewer::RecursiveCheck_Collision(const Vector3 &curPos, const Vector3 &movDir
+	, const Vector3 &dest, const float totalMovLen, const int cnt)
+{
+	if (cnt <= 0)
+		return{ false, totalMovLen + curPos.Distance(dest) };
+
+	// movDir 방향으로 움직여가면서, dest 방향으로 나아갈수 있는지 확인한다.
+	// dest 방향으로 갈수 있다면, 재귀적으로 따라간다.
+	float movLen = 1.f;
+	while (movLen < 10.f)
+	{
+		const Vector3 pos = curPos + movDir*movLen;
+		Vector3 dir = dest - pos;
+		dir.y = 0;
+		dir.Normalize();
+
+		if (dest.LengthRoughly(pos) < 0.1f)
+			return{ true, totalMovLen + movLen }; // 목적지 도착
+
+		if (IsPassThrough(pos, dir))
+		{
+			const auto result = RecursiveCheck_Move(pos, dir, dest, totalMovLen+movLen, cnt - 1);
+			return result;
+		}
+
+		movLen += 1.f;
+	}
+
+	return{ false, FLT_MAX };
+}
+
+
+// 충돌 체크를 하면서 movDir 방향으로 전진한다.
+// 목적지까지의 이동 거리를 리턴한다. (작은 값이 더 나은 경로다.)
+std::pair<bool, float> cViewer::RecursiveCheck_Move(const Vector3 &curPos, const Vector3 &movDir
+	, const Vector3 &dest, const float totalMovLen, const int cnt)
+{
+	const float reflectLen = 0.1f;
+	cBoundingSphere bsphere = m_sphere.m_boundingSphere;
+
+	// movDir 방향으로 전진하면서, 벽과 충돌이 있는지 확인한다.
+	// 목적지에 도착할 때까지 전진.
+	float distance = FLT_MAX;
+	float movLen = 0.f;
+
+	while (movLen < 100.f)
+	{
+		const Vector3 pos = curPos + movDir * movLen;
+		bsphere.SetPos(pos);
+
+		if (dest.LengthRoughly(pos) < 0.1f)
+			return{ true, totalMovLen + movLen }; // 목적지 도착
+
+		for (auto &wall : m_walls)
+		{
+			cBoundingBox bbox = wall->m_boundingBox;
+			bbox *= wall->GetWorldMatrix();
+
+			Vector3 collisionPos;
+			Plane collisionPlane;
+			if (bbox.Collision2D(bsphere, &collisionPos, &collisionPlane))
+			{
+				// 벽과 충돌 했다면,
+				// 벽의 면을 따라 이동한다. (왼쪽 or 오른쪽)
+				// 목적지에 가까운 경로의 거리를 리턴한다.
+				const Vector3 cpos = collisionPos + collisionPlane.N * (m_sphere.GetRadius() + reflectLen);
+				const Matrix44 ref = collisionPlane.GetReflectMatrix();
+				const Vector3 reflectDir = movDir.MultiplyNormal(ref);
+
+				const Vector3 leftV = Vector3(0, 1, 0).CrossProduct(collisionPlane.N).Normal();
+				const Vector3 rightV = -leftV;
+				const Vector3 movDir = (reflectDir.DotProduct(rightV) >= 0) ? rightV : leftV;
+
+				const std::pair<bool, float> r1 = RecursiveCheck_Collision(cpos, leftV, dest, totalMovLen + movLen, cnt);
+				const std::pair<bool, float> r2 = RecursiveCheck_Collision(cpos, rightV, dest, totalMovLen + movLen, cnt);
+
+				if (r1.first && r2.first)
+				{
+					return{ true, min(r1.second, r2.second) };
+				}
+				else if (r1.first || r2.first)
+				{
+					return{ true, r1.first ? r1.second : r2.second };
+				}
+				else
+				{
+					return{ false, min(r1.second, r2.second) };
+				}				
+			}
+		}
+
+		movLen += 1.f;
+	}
+
+	// 목적지에 도착 못 했다면, 이 경로는 무시되어야 한다.
+	return{ false, FLT_MAX };
+}
+
+
+// 가장 가까운 벽과 그 거리를 리턴한다.
+// 없다면 NULL, FLT_MAX 를 리턴한다.
+std::pair<cNode*, float> cViewer::GetNearestWall(const Vector3 &curPos, const Vector3 &nextPos)
+{
+	//목적지 방향으로 방해물이 있는지 검사하고, 있다면 방해물과 거리를 리턴한다.
+	const Vector3 dir = (nextPos - curPos).Normal();
+	const Vector3 rightV = Vector3(0, 1, 0).CrossProduct(dir).Normal();
+	const Vector3 leftV = -rightV;
+	const Vector3 curPosL = curPos + Vector3(0, 0.5f, 0) + leftV * m_sphere.GetRadius();
+	const Vector3 curPosR = curPos + Vector3(0, 0.5f, 0) + rightV * m_sphere.GetRadius();
+
+	const Ray ray1(curPosL, dir);
+	const Ray ray2(curPosR, dir);
+
+	// 가장 가까운 방해물을 검색한다.
+	cNode *nearWall = NULL;
+	float nearLen = FLT_MAX;
+	for (u_int i = 0; i < m_walls.size(); ++i)
+	{
+		cBoundingBox bbox = m_walls[i]->m_boundingBox;
+		bbox *= m_walls[i]->GetWorldMatrix();
+
+		float dist1 = FLT_MAX, dist2 = FLT_MAX;
+		bbox.Pick(ray1, &dist1);
+		bbox.Pick(ray2, &dist2);
+
+		if (nearLen > min(dist1, dist2))
+		{
+			nearLen = min(dist1, dist2);
+			nearWall = m_walls[i];
+		}
+	}
+
+	return{ nearWall, nearLen };
+}
+
+
+bool cViewer::IsPassThrough(const Vector3 &curPos, const Vector3 &dir)
+{
+	//목적지 방향으로 방해물이 없다면, 목적지로 전진한다.
+	const Vector3 rightV = Vector3(0, 1, 0).CrossProduct(dir).Normal();
+	const Vector3 leftV = -rightV;
+	const Vector3 curPosL = curPos + Vector3(0, 0.5f, 0) + leftV * m_sphere.GetRadius();
+	const Vector3 curPosR = curPos + Vector3(0, 0.5f, 0) + rightV * m_sphere.GetRadius();
+
+	const Ray ray1(curPosL, dir);
+	const Ray ray2(curPosR, dir);
+
+	// 가장 가까운 방해물을 검색한다.
+	float nearLen1 = FLT_MAX;
+	float nearLen2 = FLT_MAX;
+	for (u_int i = 0; i < m_walls.size(); ++i)
+	{
+		cBoundingBox bbox = m_walls[i]->m_boundingBox;
+		bbox *= m_walls[i]->GetWorldMatrix();
+
+		float dist = FLT_MAX;
+		if (bbox.Pick(ray1, &dist))
+			if (nearLen1 > dist)
+				nearLen1 = dist;
+		if (bbox.Pick(ray2, &dist))
+			if (nearLen2 > dist)
+				nearLen2 = dist;
+	}
+
+	const float limitR = m_sphere.GetRadius() * 2.5f;
+	if ((nearLen1 > limitR) && (nearLen2 > limitR))
+	{
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -347,29 +667,15 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
-	case WM_DROPFILES:
-	{
-		const HDROP hdrop = (HDROP)wParam;
-		char filePath[MAX_PATH];
-		const UINT size = DragQueryFileA(hdrop, 0, filePath, MAX_PATH);
-		if (size == 0)
-			return;// handle error...
-	}
-	break;
-
 	case WM_MOUSEWHEEL:
 	{
 		cAutoCam cam(&m_camera);
-
 		int fwKeys = GET_KEYSTATE_WPARAM(wParam);
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		//dbg::Print("%d %d", fwKeys, zDelta);
-
 		const float len = graphic::GetMainCamera().GetDistance();
 		float zoomLen = (len > 100) ? 50 : (len / 4.f);
 		if (fwKeys & 0x4)
 			zoomLen = zoomLen / 10.f;
-
 		graphic::GetMainCamera().Zoom((zDelta<0) ? -zoomLen : zoomLen);
 	}
 	break;
@@ -436,7 +742,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			const Ray ray = GetMainCamera().GetRay(pos.x, pos.y);
 			Plane ground(Vector3(0, 1, 0), 0);
 			m_dest = ground.Pick(ray.orig, ray.dir);
-			m_dest.y = 0.5f;
+			m_dest.y = 1.f;
 			m_path.clear();
 			m_curIdx = 0;
 			m_path.push_back(m_dest);
