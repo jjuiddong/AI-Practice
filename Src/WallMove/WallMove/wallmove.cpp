@@ -282,11 +282,11 @@ void cViewer::OnRender(const float deltaSeconds)
 
 				const Vector3 nv1 = (v1.IsEmpty()) ? -v2 : v1;
 				const Vector3 nv2 = (v2.IsEmpty()) ? -v1 : v2;
-				const Vector3 nextPos1 = cpos + nv1 * (len1 + m_sphere.GetRadius() * 2.f);
-				const Vector3 nextPos2 = cpos + nv2 * (len2 + m_sphere.GetRadius() * 2.f);
+				const Vector3 nextPos1 = cpos + (collisionPlane.N*reflectLen) + nv1 * (len1 + m_sphere.GetRadius() * 1.5f);
+				const Vector3 nextPos2 = cpos + (collisionPlane.N*reflectLen) + nv2 * (len2 + m_sphere.GetRadius() * 1.5f);
 
-				const std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, m_dest, 0.f, 5);
-				const std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, m_dest, 0.f, 5);
+				const std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, m_dest, 0.f, 10);
+				const std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, m_dest, 0.f, 10);
 				
 				Vector3 newPos;
 				if (r1.first && r2.first)
@@ -301,6 +301,10 @@ void cViewer::OnRender(const float deltaSeconds)
 				{
 					newPos = (r1.second < r2.second) ? nextPos1 : nextPos2;
 				}
+
+				// 충돌이 일어난 위치로 튕겨나간다.
+				m_sphere.m_transform.pos = cpos;
+
 
 				m_path.clear();
 				m_path.push_back(m_dest);
@@ -375,16 +379,16 @@ std::pair<bool, float> cViewer::RecursiveCheck_Ray(const Vector3 &curPos, const 
 		}
 		else
 		{
-			if (nearDist <= 0)
+			const float reflectLen = 0.01f;
+			if (nearDist <= (m_sphere.GetRadius() + (reflectLen+0.05f)))
 			{
 				// 벽이 바로 앞에 있을 경우에는, 경로에서 제외 시킨다.
-				dbg::Log("end of path\n");
+				//dbg::Log("end of path\n");
 				return{ false, FLT_MAX };
 			}
 
 			// nextPos로 가는 도중에 벽과 부딪쳤을 때.
 			// 부딪친 위치에서 목적지로 선회 한다.
-			const float reflectLen = 0.1f;
 			cBoundingSphere bsphere = m_sphere.m_boundingSphere;
 
 			const Vector3 pos = curPos + ray.dir * (nearDist - (m_sphere.GetRadius()/10.f));
@@ -418,8 +422,10 @@ std::pair<bool, float> cViewer::RecursiveCheck_Ray(const Vector3 &curPos, const 
 				const Vector3 nextPos1 = cpos + nv1 * (len1 + m_sphere.GetRadius() * 2.f);
 				const Vector3 nextPos2 = cpos + nv2 * (len2 + m_sphere.GetRadius() * 2.f);
 
-				std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, dest, totalMovLen + nearDist, cnt - 1);
-				std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, dest, totalMovLen + nearDist, cnt - 1);
+				std::pair<bool, float> r1 = RecursiveCheck_Ray(cpos, nextPos1, dest
+					, totalMovLen + nearDist, cnt - 1);
+				std::pair<bool, float> r2 = RecursiveCheck_Ray(cpos, nextPos2, dest
+					, totalMovLen + nearDist, cnt - 1);
 
 				if (r1.first && r2.first)
 				{
@@ -561,6 +567,7 @@ std::pair<cNode*, float> cViewer::GetNearestWall(const Vector3 &curPos, const Ve
 
 	const Ray ray1(curPosL, dir);
 	const Ray ray2(curPosR, dir);
+	const Ray ray3(curPos, dir);
 
 	// 가장 가까운 방해물을 검색한다.
 	cNode *nearWall = NULL;
@@ -570,13 +577,14 @@ std::pair<cNode*, float> cViewer::GetNearestWall(const Vector3 &curPos, const Ve
 		cBoundingBox bbox = m_walls[i]->m_boundingBox;
 		bbox *= m_walls[i]->GetWorldMatrix();
 
-		float dist1 = FLT_MAX, dist2 = FLT_MAX;
+		float dist1 = FLT_MAX, dist2 = FLT_MAX, dist3 = FLT_MAX;
 		bbox.Pick(ray1, &dist1);
 		bbox.Pick(ray2, &dist2);
+		bbox.Pick(ray3, &dist3);
 
-		if (nearLen > min(dist1, dist2))
+		if (nearLen > min(dist1, min(dist2, dist3)))
 		{
-			nearLen = min(dist1, dist2);
+			nearLen = min(dist1, min(dist2, dist3));
 			nearWall = m_walls[i];
 		}
 	}
