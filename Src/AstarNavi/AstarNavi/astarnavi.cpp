@@ -1,5 +1,5 @@
 //
-// Wall Move
+// Astar + Navigation Mesh
 //
 
 #include "../../../../Common/Common/common.h"
@@ -25,9 +25,12 @@ public:
 	void ChangeWindowSize();
 
 
+protected:
+	void NextMove(const int idx);
+
+
 public:
 	cCamera3D m_camera;
-	cCube m_cube3;
 	cSphere m_sphere;
 	cSphere m_sphere2; // Collision Position
 	cDbgAxis m_dbgAxis;
@@ -35,7 +38,9 @@ public:
 	bool m_isCollisionPosition;
 	vector<cNode*> m_walls;
 	cCascadedShadowMap m_ccsm;
-
+	ai::cNavigationMesh m_navi;
+	cDbgLineList m_lineList;
+	
 	// move state
 	int m_curIdx;
 	Vector3 m_dest;
@@ -69,7 +74,7 @@ cViewer::cViewer()
 	, m_camera("main camera")
 	, m_isCollisionPosition(false)
 {
-	m_windowName = L"AI Wall Move";
+	m_windowName = L"AI AStar + Navigation Mesh";
 	//const RECT r = { 0, 0, 1024, 768 };
 	const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
@@ -118,12 +123,6 @@ bool cViewer::OnInit()
 		m_dbgAxis.SetAxis(bbox, false);
 	}
 
-	{
-		cBoundingBox bbox;
-		bbox.SetBoundingBox(Vector3(0, 0, 0), Vector3(.2f, 1.f, .2f), Quaternion());
-		m_cube3.Create(m_renderer, bbox, eVertexType::POSITION | eVertexType::NORMAL);
-	}
-
 	m_sphere.Create(m_renderer, 0.5f, 10, 10);
 	m_sphere.m_transform.pos = Vector3(1.f, 0.5f, 1.f);
 	m_sphere.m_boundingSphere.SetRadius(0.5f);
@@ -139,6 +138,14 @@ bool cViewer::OnInit()
 
 	m_ccsm.Create(m_renderer);
 
+	if (!m_navi.ReadFromPathFile("../media2/wallnavi.txt"))
+	{
+		::MessageBoxA(m_hWnd, "Error Read Navigation Mesh file", "Error", MB_OK);
+		return false;
+	}
+
+	m_lineList.Create(m_renderer, 128);
+
 	return true;
 }
 
@@ -146,7 +153,49 @@ bool cViewer::OnInit()
 void cViewer::OnUpdate(const float deltaSeconds)
 {
 	GetMainCamera().Update(deltaSeconds);
+
+	if (eMoveState::MOVE == m_movState)
+	{
+		Vector3 diff = m_sphere.m_transform.pos - m_path[m_curIdx];
+		diff.y = 0;
+
+		if (diff.Length() < 0.01f) // arrive
+		{
+			NextMove(m_curIdx + 1);
+		}
+		else
+		{
+			m_sphere.m_transform.pos += m_dir * deltaSeconds * 2.f;
+		}
+	}
 }
+
+
+void cViewer::NextMove(const int idx)
+{
+	if ((int)m_path.size() <= idx)
+	{
+		m_movState = eMoveState::WAIT;
+		return;
+	}
+
+	Vector3 nextPos = m_path[idx];
+	Vector3 diff = nextPos - m_sphere.m_transform.pos;
+	diff.y = 0;
+	if (diff.Length() < 0.01f) // arrive
+	{
+		NextMove(idx + 1);
+		return;
+	}
+
+	m_movState = eMoveState::MOVE;
+	m_curIdx = idx;
+
+	m_dir = nextPos - m_sphere.m_transform.pos;
+	m_dir.y = 0;
+	m_dir.Normalize();
+}
+
 
 void cViewer::OnRender(const float deltaSeconds)
 {
@@ -169,15 +218,9 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_terrain.SetTechnique("ShadowMap");
 		m_terrain.RenderCascadedShadowMap(m_renderer, m_ccsm);
 
-		//m_cube3.m_color = cColor::RED;
-		//m_cube3.m_transform.pos = m_dest;
-		//m_cube3.Render(m_renderer);
-		//m_cube3.m_color = cColor::BLUE;
-		//m_cube3.m_transform.pos = dest;
-		//m_cube3.Render(m_renderer);
-
 		m_sphere.Render(m_renderer);
 		m_sphere2.Render(m_renderer);
+		m_lineList.Render(m_renderer);
 
 		m_dbgAxis.Render(m_renderer);
 		m_renderer.RenderFPS();
@@ -310,8 +353,14 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			m_dest.y = 1.f;
 			m_path.clear();
 			m_curIdx = 0;
-			m_path.push_back(m_dest);
-			m_movState = eMoveState::MOVE;
+			vector<Vector3> out1;
+			m_navi.Find(m_sphere.m_transform.pos, m_dest, out1, m_path);
+			NextMove(0);
+
+			m_lineList.ClearLines();
+			for (int i=0; i < (int)m_path.size()-1; ++i)
+				m_lineList.AddLine(m_renderer, m_path[i], m_path[i + 1], false);
+			m_lineList.UpdateBuffer(m_renderer);
 		}
 	}
 	break;
