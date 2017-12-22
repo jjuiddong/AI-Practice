@@ -99,12 +99,13 @@ bool cViewer::OnInit()
 {
 	const float WINSIZE_X = m_windowRect.right - m_windowRect.left;
 	const float WINSIZE_Y = m_windowRect.bottom - m_windowRect.top;
-	m_camera.SetCamera(Vector3(10, 25, -10), Vector3(10, 0, 10), Vector3(0, 1, 0));
+	m_camera.SetCamera(Vector3(0, 40, -30), Vector3(0, 0, 0), Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
 	cTerrainLoader loader(&m_terrain);
-	loader.Read(m_renderer, "../media2/wall.trn");
+	//loader.Read(m_renderer, "../media2/wall2.trn");
+	loader.Read(m_renderer, "wall2.trn");
 
 	// get all wall
 	for (auto &tile : m_terrain.m_tiles)
@@ -138,7 +139,8 @@ bool cViewer::OnInit()
 
 	m_ccsm.Create(m_renderer);
 
-	if (!m_navi.ReadFromPathFile("../media2/wallnavi.txt"))
+	//if (!m_navi.ReadFromPathFile("../media2/wallnavi3.txt"))
+	if (!m_navi.ReadFromPathFile("wallnavi3.txt"))
 	{
 		::MessageBoxA(m_hWnd, "Error Read Navigation Mesh file", "Error", MB_OK);
 		return false;
@@ -159,13 +161,13 @@ void cViewer::OnUpdate(const float deltaSeconds)
 		Vector3 diff = m_sphere.m_transform.pos - m_path[m_curIdx];
 		diff.y = 0;
 
-		if (diff.Length() < 0.01f) // arrive
+		if (diff.Length() < 0.1f) // arrive
 		{
 			NextMove(m_curIdx + 1);
 		}
 		else
 		{
-			m_sphere.m_transform.pos += m_dir * deltaSeconds * 2.f;
+			m_sphere.m_transform.pos += m_dir * deltaSeconds * 3.f;
 		}
 	}
 }
@@ -301,11 +303,16 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 		case VK_SPACE:
+		{
 			if (RUN == m_state)
 				Pause();
 			else
 				Resume();
-			break;
+
+			cTerrainLoader loader(&m_terrain);
+			loader.Write("../media2/wall2.trn");
+		}
+		break;
 
 		case VK_RETURN:
 			m_isWireframe = !m_isWireframe;
