@@ -1,6 +1,8 @@
 //
 // 2017-10-30, jjuiddong
 //
+// 2017-11-18
+//	- route
 //
 #pragma once
 
@@ -17,12 +19,12 @@ public:
 	virtual bool Render(graphic::cRenderer &renderer, const XMMATRIX &parentTm = graphic::XMIdentity, const int flags = 1) override;
 	virtual bool Update(graphic::cRenderer &renderer, const float deltaSeconds) override;
 
-
 	// iActorInterface Override
 	virtual Transform& aiGetTransform() override;
 	virtual void aiSetAnimation(const Str64 &animationName) override;
 	virtual graphic::cNode* aiCollision(const graphic::cBoundingSphere &srcBSphere
 		, OUT graphic::cBoundingSphere &collisionSphrere) override;
+	virtual bool aiCollisionWall(OUT graphic::cBoundingPlane &out) override;
 
 
 protected:
@@ -31,6 +33,13 @@ protected:
 
 public:
 	cZealotAI *m_ai;
+	bool m_isLoaded;
+	graphic::cCube *m_collisionWall;
+
+	// for debugging
+	vector<Vector3> m_route;
+	Vector3 m_nextPos;
+	Vector3 m_dir;
 };
 
 

@@ -65,9 +65,9 @@ bool cViewer::OnInit()
 	const float WINSIZE_X = float(m_windowRect.right - m_windowRect.left);
 	const float WINSIZE_Y = float(m_windowRect.bottom - m_windowRect.top);
 	m_camera.SetCamera(Vector3(-10, 12, -10), Vector3(0, 0, 0), Vector3(0, 1, 0));
-	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
+	m_camera.SetProjection(MATH_PI / 4.f, WINSIZE_X / WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
-	m_camera.m_isMovingLimitation = true;
+	//m_camera.m_isMovingLimitation = true;
 	m_camera.m_boundingHSphere.SetBoundingHalfSphere(Vector3(0, 0, 0), 500);
 
 	m_ground.Create(m_renderer, 100, 100, 1, eVertexType::POSITION);

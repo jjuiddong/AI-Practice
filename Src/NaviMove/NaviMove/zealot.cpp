@@ -2,7 +2,6 @@
 #include "stdafx.h"
 #include "zealot.h"
 #include "zealotai.h"
-#include "groupmove.h"
 
 using namespace graphic;
 
@@ -10,6 +9,8 @@ using namespace graphic;
 cZealot::cZealot()
 	: ai::iActorInterface<cZealot>(this)
 	, m_ai(NULL)
+	, m_isLoaded(false)
+	, m_collisionWall(NULL)
 {
 }
 
@@ -35,6 +36,8 @@ void cZealot::InitModel(cRenderer &renderer)
 {
 	__super::InitModel(renderer);
 
+	m_isLoaded = true;
+	*(Vector3*)&m_boundingBox.m_bbox.Extents *= 0.5f;
 	m_boundingSphere.SetRadius(m_boundingSphere.GetRadius()*0.5f);
 }
 
@@ -66,8 +69,9 @@ bool cZealot::Update(cRenderer &renderer, const float deltaSeconds)
 cNode* cZealot::aiCollision(const cBoundingSphere &srcBSphere
 	, OUT cBoundingSphere &collisionSphrere)
 {
-	
-	for (auto &zealot : ((cViewer*)g_application)->m_zealots)
+	vector<cZealot*> &zealots = ((cViewer*)g_application)->m_zealots;
+
+	for (auto &zealot : zealots)
 	{
 		if (zealot == this)
 			continue;
@@ -76,10 +80,41 @@ cNode* cZealot::aiCollision(const cBoundingSphere &srcBSphere
 		if (bsphere.Intersects(srcBSphere))
 		{
 			collisionSphrere = zealot->m_boundingSphere * zealot->m_transform;
-			collisionSphrere.SetPos(zealot->m_transform.pos); // 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
-			return this;
+			// 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
+			collisionSphrere.SetPos(zealot->m_transform.pos);
+			return zealot;
 		}
 	}
 
 	return NULL;
+}
+
+
+bool cZealot::aiCollisionWall(OUT graphic::cBoundingPlane &out)
+{
+	vector<cBoundingPlane> &wallPlanes = ((cViewer*)g_application)->m_wallPlanes;
+
+	cBoundingSphere bsphere = m_boundingSphere * m_transform;
+
+	int mostNearIdx = -1;
+	float mostNearLen = FLT_MAX;
+	for (u_int i=0; i < wallPlanes.size(); ++i)
+	{
+		auto &bplane = wallPlanes[i];
+		
+		float distance = 0;
+		if (bplane.Collision(bsphere, NULL, &distance))
+		{
+			if (mostNearLen > distance)
+			{
+				mostNearIdx = i;
+				mostNearLen = distance;
+			}
+		}
+	}
+
+	if (mostNearIdx >= 0)
+		out = wallPlanes[mostNearIdx];
+
+	return (mostNearIdx >= 0);
 }

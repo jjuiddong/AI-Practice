@@ -1,80 +1,15 @@
-//
-// Astar + Navigation Mesh
-//
-
-#include "../../../../Common/Common/common.h"
-using namespace common;
-#include "../../../../Common/Graphic11/graphic11.h"
-#include "../../../../Common/Framework11/framework11.h"
-
+#include "stdafx.h"
+#include "navimove.h"
 
 using namespace graphic;
 
-class cViewer : public framework::cGameMain
-{
-public:
-	cViewer();
-	virtual ~cViewer();
-
-	virtual bool OnInit() override;
-	virtual void OnUpdate(const float deltaSeconds) override;
-	virtual void OnRender(const float deltaSeconds) override;
-	virtual void OnLostDevice() override;
-	virtual void OnShutdown() override;
-	virtual void OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam) override;
-	void ChangeWindowSize();
-
-
-protected:
-	void NextMove(const int idx);
-
-
-public:
-	cCamera3D m_camera;
-	cSphere m_sphere;
-	cSphere m_sphere2; // Collision Position
-	cDbgAxis m_dbgAxis;
-	cTerrain m_terrain;
-	bool m_isCollisionPosition;
-	vector<cNode*> m_walls;
-	cCascadedShadowMap m_ccsm;
-	ai::cNavigationMesh m_navi;
-	cDbgLineList m_lineList;
-	
-	// move state
-	int m_curIdx;
-	Vector3 m_dest;
-	Vector3 m_dir;
-	vector<Vector3> m_path;
-	struct eMoveState {
-		enum Enum {
-			WAIT
-			, MOVE
-			, CMOVE // collision move
-		};
-	};
-	eMoveState::Enum m_movState;
-	//
-
-	bool m_isWireframe;
-
-	sf::Vector2i m_curPos;
-	Plane m_groundPlane1, m_groundPlane2;
-	float m_moveLen;
-	bool m_LButtonDown;
-	bool m_RButtonDown;
-	bool m_MButtonDown;
-};
-
 INIT_FRAMEWORK(cViewer);
-
 
 cViewer::cViewer()
 	: m_groundPlane1(Vector3(0, 1, 0), 0)
 	, m_camera("main camera")
-	, m_isCollisionPosition(false)
 {
-	m_windowName = L"AI AStar + Navigation Mesh";
+	m_windowName = L"Navigation Mesh Move";
 	//const RECT r = { 0, 0, 1024, 768 };
 	const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
@@ -82,10 +17,6 @@ cViewer::cViewer()
 	m_LButtonDown = false;
 	m_RButtonDown = false;
 	m_MButtonDown = false;
-
-	m_curIdx = 0;
-	m_path.push_back(Vector3(0, 0, 0));
-	m_movState = eMoveState::MOVE;
 	m_isWireframe = false;
 }
 
@@ -99,7 +30,7 @@ bool cViewer::OnInit()
 {
 	const float WINSIZE_X = m_windowRect.right - m_windowRect.left;
 	const float WINSIZE_Y = m_windowRect.bottom - m_windowRect.top;
-	m_camera.SetCamera(Vector3(0, 40, -30), Vector3(0, 0, 0), Vector3(0, 1, 0));
+	m_camera.SetCamera(Vector3(17, 30, -15), Vector3(2.5f, 0, -1.5f), Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
@@ -123,13 +54,6 @@ bool cViewer::OnInit()
 		m_dbgAxis.SetAxis(bbox, false);
 	}
 
-	m_sphere.Create(m_renderer, 0.5f, 10, 10);
-	m_sphere.m_transform.pos = Vector3(1.f, 0.5f, 1.f);
-	m_sphere.m_boundingSphere.SetRadius(0.5f);
-	m_movState = eMoveState::WAIT;
-
-	m_sphere2.Create(m_renderer, 0.1f, 10, 10);
-
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL);
 	const Vector3 lightPos(-400, 800, -300);
 	const Vector3 lightLookat(0, 0, 0);
@@ -144,7 +68,25 @@ bool cViewer::OnInit()
 		return false;
 	}
 
-	m_lineList.Create(m_renderer, 128);
+	m_pathLineList.Create(m_renderer, 128, cColor::BLUE);
+
+	for (int i = 0; i < MAX_PLAYER; ++i)
+	{
+		cZealot *zealot = new cZealot();
+		zealot->Create(m_renderer);
+		zealot->m_name.Format("Zealot%d", i);
+		//zealot->m_transform.pos = Vector3(i * 2, 0, 0);
+		m_terrain.AddModel(zealot);
+		m_zealots.push_back(zealot);
+	}
+
+	for (auto &p : m_zealots)
+		m_group.m_ai->AddActor(p->m_ai);
+
+	m_nodeLineList.Create(m_renderer, 128);
+	MakeLineList(m_renderer, m_navi, m_nodeLineList);
+
+	m_nodeTextMgr.Create(1024);
 
 	return true;
 }
@@ -153,47 +95,7 @@ bool cViewer::OnInit()
 void cViewer::OnUpdate(const float deltaSeconds)
 {
 	GetMainCamera().Update(deltaSeconds);
-
-	if (eMoveState::MOVE == m_movState)
-	{
-		Vector3 diff = m_sphere.m_transform.pos - m_path[m_curIdx];
-		diff.y = 0;
-
-		if (diff.Length() < 0.1f) // arrive
-		{
-			NextMove(m_curIdx + 1);
-		}
-		else
-		{
-			m_sphere.m_transform.pos += m_dir * deltaSeconds * 3.f;
-		}
-	}
-}
-
-
-void cViewer::NextMove(const int idx)
-{
-	if ((int)m_path.size() <= idx)
-	{
-		m_movState = eMoveState::WAIT;
-		return;
-	}
-
-	Vector3 nextPos = m_path[idx];
-	Vector3 diff = nextPos - m_sphere.m_transform.pos;
-	diff.y = 0;
-	if (diff.Length() < 0.01f) // arrive
-	{
-		NextMove(idx + 1);
-		return;
-	}
-
-	m_movState = eMoveState::MOVE;
-	m_curIdx = idx;
-
-	m_dir = nextPos - m_sphere.m_transform.pos;
-	m_dir.y = 0;
-	m_dir.Normalize();
+	m_terrain.Update(m_renderer, deltaSeconds);
 }
 
 
@@ -218,9 +120,73 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_terrain.SetTechnique("ShadowMap");
 		m_terrain.RenderCascadedShadowMap(m_renderer, m_ccsm);
 
-		m_sphere.Render(m_renderer);
-		m_sphere2.Render(m_renderer);
-		m_lineList.Render(m_renderer);
+		m_pathLineList.Render(m_renderer);
+
+		m_nodeTextMgr.NewFrame();
+		if (1)
+		{
+			m_renderer.m_dbgBox.SetColor(cColor::WHITE);
+
+			for (u_int i=0; i < m_navi.m_vertices.size(); ++i)
+			{
+				auto &vtx = m_navi.m_vertices[i];
+
+				// Render Vertex Position
+				{
+					Transform tfm;
+					tfm.pos = vtx;
+					tfm.scale = Vector3(1, 1, 1)*0.2f;
+					m_renderer.m_dbgBox.SetBox(tfm);
+					m_renderer.m_dbgBox.Render(m_renderer);
+				}
+
+				// Render Vertex Number
+				{
+					Transform tfm;
+					tfm.pos = vtx;
+					tfm.scale = Vector3(1, 1, 1)*0.3f;
+
+					WStr32 str;
+					str.Format(L"%d", i);
+					m_renderer.m_textMgr.AddTextRender(m_renderer, i, str.c_str()
+						, cColor::YELLOW, cColor::BLACK, BILLBOARD_TYPE::ALL_AXIS, tfm, true);
+				}
+			}
+
+			// Render Node Number
+			for (u_int i=0; i < m_navi.m_naviNodes.size(); ++i)
+			{
+				auto &node = m_navi.m_naviNodes[i];
+				const Vector3 center = node.center;
+
+				Transform tfm;
+				tfm.pos = center;
+				tfm.pos.y += 0.3f;
+				tfm.scale = Vector3(1, 1, 1)*0.2f;
+				WStrId strId;
+				strId.Format(L"%d", i);
+
+				// if node path, red color
+				auto it = std::find(m_group.m_nodePath.begin(), m_group.m_nodePath.end(), i);
+				const cColor color = (m_group.m_nodePath.end() == it) ? cColor(0.f, 1.f, 0.f) : cColor(1.f, 0.f, 0.f);
+
+				m_nodeTextMgr.AddTextRender(m_renderer, i, strId.c_str()
+					, color
+					, cColor(0.f, 0.f, 0.f)
+					, BILLBOARD_TYPE::ALL_AXIS
+					, tfm, true);
+			}
+
+			// Render Node Line
+			{
+				Transform tfm;
+				tfm.pos = Vector3(0, 0.2f, 0);
+				m_nodeLineList.Render(m_renderer, tfm.GetMatrixXM());
+			}
+		}
+		m_nodeTextMgr.Render(m_renderer);
+
+
 
 		m_dbgAxis.Render(m_renderer);
 		m_renderer.RenderFPS();
@@ -228,6 +194,38 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.EndScene();
 		m_renderer.Present();
 	}
+}
+
+
+// Node 
+void cViewer::MakeLineList(graphic::cRenderer &renderer
+	, const ai::cNavigationMesh &navi
+	, OUT graphic::cDbgLineList &out)
+{
+	set<int> vertices; // key: vertex index1*size() - vertex index2
+
+	for (auto &node : navi.m_naviNodes)
+	{
+		const int indices[] = { node.idx1, node.idx2, node.idx3 };
+		for (int i = 0; i < 3; ++i)
+		{
+			const int vtx1 = indices[i];
+			const int vtx2 = indices[(i + 1) % 3];
+			const int key1 = vtx1 * navi.m_vertices.size() + vtx2;
+			const int key2 = vtx2 * navi.m_vertices.size() + vtx1;
+			auto it1 = vertices.find(key1);
+			auto it2 = vertices.find(key2);
+			if ((vertices.end() != it1) || (vertices.end() != it2))
+				continue;
+
+			vertices.insert(key1);
+			vertices.insert(key2);
+
+			out.AddLine(renderer, navi.m_vertices[vtx1], navi.m_vertices[vtx2], false);
+		}
+	}
+
+	out.UpdateBuffer(renderer);
 }
 
 
@@ -250,6 +248,28 @@ void cViewer::ChangeWindowSize()
 		m_renderer.ResetDevice();
 		m_camera.SetViewPort(m_renderer.m_viewPort.GetWidth(), m_renderer.m_viewPort.GetHeight());
 	}
+}
+
+
+void cViewer::UpdateLookAt()
+{
+	GetMainCamera().MoveCancel();
+
+	const float centerX = GetMainCamera().m_width / 2;
+	const float centerY = GetMainCamera().m_height / 2;
+	const Ray ray = GetMainCamera().GetRay((int)centerX, (int)centerY);
+	const float distance = m_groundPlane1.Collision(ray.dir);
+	if (distance < -0.2f)
+	{
+		GetMainCamera().m_lookAt = m_groundPlane1.Pick(ray.orig, ray.dir);
+	}
+	else
+	{ // horizontal viewing
+		const Vector3 lookAt = GetMainCamera().m_eyePos + GetMainCamera().GetDirection() * 50.f;
+		GetMainCamera().m_lookAt = lookAt;
+	}
+
+	GetMainCamera().UpdateViewMatrix();
 }
 
 
@@ -278,13 +298,15 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 	{
 		cAutoCam cam(&m_camera);
-		int fwKeys = GET_KEYSTATE_WPARAM(wParam);
 		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-		const float len = graphic::GetMainCamera().GetDistance();
-		float zoomLen = (len > 100) ? 50 : (len / 4.f);
-		if (fwKeys & 0x4)
-			zoomLen = zoomLen / 10.f;
-		graphic::GetMainCamera().Zoom((zDelta<0) ? -zoomLen : zoomLen);
+		const Ray ray = graphic::GetMainCamera().GetRay(m_curPos.x, m_curPos.y);
+		const Vector3 lookPos = m_groundPlane1.Pick(ray.orig, ray.dir);
+		const float len = GetMainCamera().GetEyePos().Distance(lookPos);
+		const float zoomLen = len / 6.f;
+		if ((zDelta > 0) && GetMainCamera().GetEyePos().y < 1.f)
+			break;
+
+		graphic::GetMainCamera().Zoom(ray.dir, (zDelta<0) ? -zoomLen : zoomLen);
 	}
 	break;
 
@@ -306,9 +328,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 				Pause();
 			else
 				Resume();
-
-			cTerrainLoader loader(&m_terrain);
-			loader.Write("../media2/wall2.trn");
 		}
 		break;
 
@@ -344,6 +363,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		cAutoCam cam(&m_camera);
 		POINT pos = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
+		UpdateLookAt();
 
 		SetCapture(m_hWnd);
 		m_RButtonDown = true;
@@ -354,22 +374,11 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			const Ray ray = GetMainCamera().GetRay(pos.x, pos.y);
 			Plane ground(Vector3(0, 1, 0), 0);
-			m_dest = ground.Pick(ray.orig, ray.dir);
-			m_dest.y = 1.f;
-			m_path.clear();
-			m_curIdx = 0;
-			vector<Vector3> out1;
-			m_navi.Find(m_sphere.m_transform.pos, m_dest, out1, m_path);
-			NextMove(0);
+			Vector3 dest = ground.Pick(ray.orig, ray.dir);
+			dest.y = 0.f;
 
-			m_lineList.ClearLines();
-			for (int i = 0; i < (int)m_path.size() - 1; ++i)
-			{
-				const Vector3 p0(m_path[i].x, 0.5f, m_path[i].z);
-				const Vector3 p1(m_path[i+1].x, 0.5f, m_path[i+1].z);
-				m_lineList.AddLine(m_renderer, p0, p1, false);
-			}
-			m_lineList.UpdateBuffer(m_renderer);
+			if ((!GetAsyncKeyState(VK_LCONTROL)) && (m_state == RUN))
+				m_group.m_ai->Move(dest);
 		}
 	}
 	break;
@@ -396,10 +405,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		cAutoCam cam(&m_camera);
 		sf::Vector2i pos = { (int)LOWORD(lParam), (int)HIWORD(lParam) };
 
-		if (wParam & 0x10) // middle button down
-		{
-		}
-
 		if (m_LButtonDown)
 		{
 			const int x = pos.x - m_curPos.x;
@@ -407,8 +412,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 			if ((abs(x) > 1000) || (abs(y) > 1000))
 				break;
-
-			m_curPos = pos;
 
 			Vector3 dir = graphic::GetMainCamera().GetDirection();
 			Vector3 right = graphic::GetMainCamera().GetRight();
@@ -424,8 +427,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			const int x = pos.x - m_curPos.x;
 			const int y = pos.y - m_curPos.y;
-			m_curPos = pos;
-
 			if (GetAsyncKeyState(VK_LCONTROL) || (PAUSE == m_state))
 			{
 				m_camera.Yaw2(x * 0.005f);
@@ -435,8 +436,6 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else if (m_MButtonDown)
 		{
 			const sf::Vector2i point = { pos.x - m_curPos.x, pos.y - m_curPos.y };
-			m_curPos = pos;
-
 			const float len = graphic::GetMainCamera().GetDistance();
 			graphic::GetMainCamera().MoveRight(-point.x * len * 0.001f);
 			graphic::GetMainCamera().MoveUp(point.y * len * 0.001f);
@@ -444,6 +443,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		else
 		{
 		}
+
+		m_curPos = pos;
 	}
 	break;
 	}
