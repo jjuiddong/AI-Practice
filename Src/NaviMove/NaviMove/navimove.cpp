@@ -39,9 +39,12 @@ bool cViewer::OnInit()
 
 	// get all wall
 	for (auto &tile : m_terrain.m_tiles)
+	{
+		tile->m_isRenderLine = false;
 		for (auto &p : tile->m_children)
 			if (p->m_name == "cube")
 				m_walls.push_back(p);
+	}
 
 	for (auto &wall : m_walls)
 		if (cCube *cube = dynamic_cast<cCube*>(wall))
@@ -86,7 +89,7 @@ bool cViewer::OnInit()
 	m_nodeLineList.Create(m_renderer, 128);
 	MakeLineList(m_renderer, m_navi, m_nodeLineList);
 
-	m_nodeTextMgr.Create(1024);
+	m_nodeTextMgr.Create(1024, 512);
 
 	return true;
 }

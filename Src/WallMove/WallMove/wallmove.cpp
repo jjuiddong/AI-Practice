@@ -114,7 +114,7 @@ bool cViewer::OnInit()
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
 	cTerrainLoader loader(&m_terrain);
-	loader.Read(m_renderer, "../media2/wall.trn");
+	loader.Read(m_renderer, "../media2/wall2.trn");
 
 	// get all wall
 	for (auto &tile : m_terrain.m_tiles)
@@ -328,7 +328,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.GetDevContext()->RSSetState(m_isWireframe? state.Wireframe() : state.CullCounterClockwise());
 		m_terrain.SetTechnique("ShadowMap");
 		m_terrain.RenderCascadedShadowMap(m_renderer, m_ccsm);
-
+		
 		m_cube3.m_color = cColor::RED;
 		m_cube3.m_transform.pos = m_dest;
 		m_cube3.Render(m_renderer);

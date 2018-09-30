@@ -76,7 +76,6 @@ bool cViewer::OnInit()
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
 	m_ground.Create(m_renderer, 10, 10, 1, 1, eVertexType::POSITION | eVertexType::NORMAL);
-	m_ground.m_isLineDrawing = true;
 	m_ground.m_mtrl.Init(Vector4(0.2f, 0.2f, 0.2f, 1), Vector4(0.2f, 0.2f, 0.2f, 1), Vector4(0.2f, 0.2f, 0.2f, 0.2f));
 
 	{
@@ -172,6 +171,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		CommonStates state(m_renderer.GetDevice());
 		m_renderer.GetDevContext()->RSSetState(state.Wireframe());
 		m_ground.Render(m_renderer);
+		m_ground.RenderLine(m_renderer);
 		m_cube1.Render(m_renderer);
 		m_cube2.Render(m_renderer);
 		m_sphere.Render(m_renderer);

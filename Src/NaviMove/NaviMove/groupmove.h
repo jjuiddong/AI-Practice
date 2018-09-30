@@ -142,7 +142,7 @@ namespace ai
 			else if (isWallCollision)
 			{
 				// 벽과 충돌했을 경우
-
+				int a = 0;
 
 
 			}

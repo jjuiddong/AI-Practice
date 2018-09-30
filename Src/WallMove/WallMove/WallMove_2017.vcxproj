@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F67048B4-BF0C-45A2-A23B-AD00CDA1FE24}</ProjectGuid>
+    <ProjectGuid>{0F4172C7-FA91-4320-A5C7-9459FA8F76A2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>NaviMove</RootNamespace>
+    <RootNamespace>WallMove</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -87,7 +87,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_HAS_ITERATOR_DEBUGGING=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -117,7 +118,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -152,15 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="groupmove.cpp" />
-    <ClCompile Include="navimove.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="zealot.cpp" />
-    <ClCompile Include="zealotai.cpp" />
-    <ClCompile Include="zealotgroup.cpp" />
+    <ClCompile Include="wallmove.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Common\AI\AI.vcxproj">
@@ -175,20 +169,9 @@
     <ProjectReference Include="..\..\..\..\Common\Graphic11\Graphic11.vcxproj">
       <Project>{6e994653-a69c-4be2-b830-97676e805f29}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\DirectXTK\DirectXTK_Desktop_2015.vcxproj">
+    <ProjectReference Include="..\..\..\..\DirectXTK\DirectXTK_Desktop_2017.vcxproj">
       <Project>{e0b52ae7-e160-4d32-bf3f-910b785e5a8e}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="attack.h" />
-    <ClInclude Include="groupmove.h" />
-    <ClInclude Include="move2.h" />
-    <ClInclude Include="navimove.h" />
-    <ClInclude Include="patrol.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="zealot.h" />
-    <ClInclude Include="zealotai.h" />
-    <ClInclude Include="zealotgroup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
