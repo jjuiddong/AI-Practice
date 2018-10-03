@@ -7,8 +7,8 @@
 #include "zealot.h"
 
 
-class cZealotGroupAI;
-class cGroup : public ai::iActorInterface<cGroup>
+class cZealotGroupBrain;
+class cGroup
 {
 public:
 	cGroup();
@@ -16,16 +16,16 @@ public:
 
 
 public:
-	cZealotGroupAI *m_ai;
+	cZealotGroupBrain *m_brain;
 	vector<int> m_nodePath;
 };
 
 
-class cZealotGroupAI : public ai::cActor<cGroup>
+class cZealotGroupBrain : public ai::cBrain<cGroup>
 {
 public:
-	cZealotGroupAI(ai::iActorInterface<cGroup> *agent);
-	virtual ~cZealotGroupAI();
+	cZealotGroupBrain(cGroup *agent);
+	virtual ~cZealotGroupBrain();
 
 	void Move(const Vector3 &dest);
 };

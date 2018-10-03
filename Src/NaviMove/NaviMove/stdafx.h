@@ -10,8 +10,9 @@ extern framework::cGameMain* g_application;
 
 #include "zealotgroup.h"
 #include "zealot.h"
-#include "zealotai.h"
+#include "zealotbrain.h"
 #include "navimove.h"
+#include "global.h"
 
 
 extern ai::cPathFinder g_pathFinder;

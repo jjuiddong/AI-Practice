@@ -15,7 +15,7 @@ namespace ai
 		, public common::cMemoryPool< cPatrol<T> >
 	{
 	public:
-		cPatrol(ai::iActorInterface<T> *agent, const Vector3 &dest, const float speed = 3.f)
+		cPatrol(T *agent, const Vector3 &dest, const float speed = 3.f)
 			: cAction<T>(agent, "patrol", "", eActionType::PATROL)
 		{
 			m_patrolPos = 0;

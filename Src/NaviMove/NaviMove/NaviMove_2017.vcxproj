@@ -152,14 +152,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="groupmove.cpp" />
+    <ClCompile Include="global.cpp" />
     <ClCompile Include="navimove.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="zealot.cpp" />
-    <ClCompile Include="zealotai.cpp" />
+    <ClCompile Include="zealotbrain.cpp" />
     <ClCompile Include="zealotgroup.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -181,13 +181,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="attack.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="groupmove.h" />
     <ClInclude Include="move2.h" />
     <ClInclude Include="navimove.h" />
     <ClInclude Include="patrol.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="zealot.h" />
-    <ClInclude Include="zealotai.h" />
+    <ClInclude Include="zealotbrain.h" />
     <ClInclude Include="zealotgroup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

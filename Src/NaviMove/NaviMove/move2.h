@@ -13,7 +13,7 @@ namespace ai
 		, public common::cMemoryPool<cMove2<T>>
 	{
 	public:
-		cMove2(ai::iActorInterface<T> *agent, const Vector3 &dest, const float speed = 3.f)
+		cMove2(T *agent, const Vector3 &dest, const float speed = 3.f)
 			: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::MOVE)
 			, m_rotateTime(0)
 			, m_speed(speed)

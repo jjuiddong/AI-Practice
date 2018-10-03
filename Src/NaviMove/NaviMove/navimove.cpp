@@ -34,6 +34,8 @@ bool cViewer::OnInit()
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
 
+	g_global.m_main = this;
+
 	cTerrainLoader loader(&m_terrain);
 	loader.Read(m_renderer, "../media2/wall2.trn");
 
@@ -84,7 +86,7 @@ bool cViewer::OnInit()
 	}
 
 	for (auto &p : m_zealots)
-		m_group.m_ai->AddActor(p->m_ai);
+		m_group.m_brain->AddActor(p->m_brain);
 
 	m_nodeLineList.Create(m_renderer, 128);
 	MakeLineList(m_renderer, m_navi, m_nodeLineList);
@@ -381,7 +383,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			dest.y = 0.f;
 
 			if ((!GetAsyncKeyState(VK_LCONTROL)) && (m_state == RUN))
-				m_group.m_ai->Move(dest);
+				m_group.m_brain->Move(dest);
 		}
 	}
 	break;

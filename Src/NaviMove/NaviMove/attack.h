@@ -13,7 +13,7 @@ namespace ai
 		, public common::cMemoryPool< cMove2<T> >
 	{
 	public:
-		cAttack(ai::iActorInterface<T> *agent, const Vector3 &target)
+		cAttack(T *agent, const Vector3 &target)
 			: cAction<T>(agent, "attack", "Attack", eActionType::ATTACK)
 		{
 			m_target = target;
