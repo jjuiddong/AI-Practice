@@ -10,8 +10,8 @@ cViewer::cViewer()
 	, m_camera("main camera")
 {
 	m_windowName = L"Navigation Mesh Move";
-	//const RECT r = { 0, 0, 1024, 768 };
-	const RECT r = { 0, 0, 1280, 1024 };
+	const RECT r = { 0, 0, 1024, 768 };
+	//const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
 	m_moveLen = 0;
 	m_LButtonDown = false;
