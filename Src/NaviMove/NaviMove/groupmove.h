@@ -103,8 +103,8 @@ namespace ai
 		// 목적지에 가깝다면, 다음 노드로 이동
 		// 프레임이 낮을 때, 통과되는 문제가 있을 수 있다.
 		const float distance = curPos.LengthRoughly(dest);
-		//if (curPos.LengthRoughly(dest) < 0.01f)
-		if (curPos.LengthRoughly(dest) <= m_agent->m_boundingSphere.GetRadius())
+		//if (curPos.LengthRoughly(dest) < 0.1f)
+		if (curPos.LengthRoughly(dest) <= m_agent->m_boundingSphere.GetRadius()*0.5f)
 		{
 			++m_idx;
 			NextMove(m_idx);
@@ -303,7 +303,7 @@ namespace ai
 		if (collisionPos != curPos)
 		{
 			//collisionPos = collisionPos - (m_dir * bsphere.GetRadius() * 1.1f);
-			collisionPos = collisionPos + (bplane.Normal() * bsphere.GetRadius() * 0.1f);
+			collisionPos = collisionPos + (bplane.Normal() * bsphere.GetRadius());
 		}
 
 		Quaternion q;

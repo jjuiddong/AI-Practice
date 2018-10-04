@@ -1,0 +1,170 @@
+Vertex
+	type 0
+	pos 0.379874 0 0.557188
+	dir 0 0 0
+	edge 1 19 2 
+Vertex
+	type 0
+	pos 4.49659 0 4.63127
+	dir 0 0 0
+	edge 0 19 2 3 16 
+Vertex
+	type 0
+	pos 0.330359 0 5.06097
+	dir 0 0 0
+	edge 0 1 4 3 
+Vertex
+	type 0
+	pos 4.54217 0 12.3698
+	dir 0 0 0
+	edge 1 4 2 6 5 7 
+Vertex
+	type 0
+	pos 0.419646 0 12.55
+	dir 0 0 0
+	edge 3 2 5 
+Vertex
+	type 0
+	pos 0.513072 0 19.3904
+	dir 0 0 0
+	edge 4 6 3 
+Vertex
+	type 0
+	pos 4.7274 0 19.4615
+	dir 0 0 0
+	edge 5 3 8 7 
+Vertex
+	type 0
+	pos 6.99396 0 12.6133
+	dir 0 0 0
+	edge 8 3 12 10 11 31 6 
+Vertex
+	type 0
+	pos 7.83156 0 19.404
+	dir 0 0 0
+	edge 6 7 9 31 
+Vertex
+	type 0
+	pos 11.9965 0 19.4712
+	dir 0 0 0
+	edge 8 31 30 29 
+Vertex
+	type 0
+	pos 11.726 0 12.9731
+	dir 0 0 0
+	edge 11 7 31 
+Vertex
+	type 0
+	pos 11.7837 0 10.3529
+	dir 0 0 0
+	edge 12 10 7 13 20 21 
+Vertex
+	type 0
+	pos 7.07916 0 10.4796
+	dir 0 0 0
+	edge 7 11 14 13 
+Vertex
+	type 0
+	pos 11.865 0 7.46949
+	dir 0 0 0
+	edge 14 12 11 15 21 
+Vertex
+	type 0
+	pos 7.05256 0 7.24175
+	dir 0 0 0
+	edge 12 16 13 15 
+Vertex
+	type 0
+	pos 11.9234 0 5.06847
+	dir 0 0 0
+	edge 13 14 16 17 
+Vertex
+	type 0
+	pos 7.07286 0 4.60249
+	dir 0 0 0
+	edge 14 18 1 19 15 17 
+Vertex
+	type 0
+	pos 11.919 0 0.660379
+	dir 0 0 0
+	edge 15 18 16 
+Vertex
+	type 0
+	pos 7.61391 0 0.61567
+	dir 0 0 0
+	edge 16 19 17 
+Vertex
+	type 0
+	pos 4.56169 0 0.591498
+	dir 0 0 0
+	edge 1 0 16 18 
+Vertex
+	type 0
+	pos 14.3138 0 10.3681
+	dir 0 0 0
+	edge 21 11 25 27 
+Vertex
+	type 0
+	pos 14.383 -1.90735e-06 7.52129
+	dir 0 0 0
+	edge 13 20 11 22 24 25 
+Vertex
+	type 0
+	pos 14.4313 0 0.658354
+	dir 0 0 0
+	edge 21 23 24 
+Vertex
+	type 0
+	pos 19.6452 0 0.557741
+	dir 0 0 0
+	edge 24 22 
+Vertex
+	type 0
+	pos 19.6284 0 7.24503
+	dir 0 0 0
+	edge 21 25 23 22 
+Vertex
+	type 0
+	pos 19.5853 0 10.1203
+	dir 0 0 0
+	edge 20 26 27 24 21 
+Vertex
+	type 0
+	pos 19.6769 0 12.8238
+	dir 0 0 0
+	edge 25 27 
+Vertex
+	type 0
+	pos 14.3415 0 12.7799
+	dir 0 0 0
+	edge 26 20 25 
+Vertex
+	type 0
+	pos 14.4629 0 15.5861
+	dir 0 0 0
+	edge 32 29 
+Vertex
+	type 0
+	pos 14.4249 0 18.1048
+	dir 0 0 0
+	edge 31 9 30 28 33 32 
+Vertex
+	type 0
+	pos 14.3939 0 19.4973
+	dir 0 0 0
+	edge 9 29 33 
+Vertex
+	type 0
+	pos 11.8263 0 18.1552
+	dir 0 0 0
+	edge 9 8 10 7 29 
+Vertex
+	type 0
+	pos 19.5758 0 15.7476
+	dir 0 0 0
+	edge 33 28 29 
+Vertex
+	type 0
+	pos 19.7215 0 19.5296
+	dir 0 0 0
+	edge 30 32 29 

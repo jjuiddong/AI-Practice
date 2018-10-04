@@ -73,8 +73,34 @@ void cZealotGroupBrain::Move(const Vector3 &dest)
 	vector<cBoundingPlane> &wallPlanes = ((cViewer*)g_application)->m_wallPlanes;
 	wallPlanes.clear();
 
-	for (auto idx : nodePath)
+
+	// 첫 번째, 마지막 노드의 인접노드에 붙은 Wall을 추가한다.
+	// 하나의 노드는 삼각형이기 때문에, 시작과 마지막에 Wall이 빠질 수도 있다.
+	set<int> wallNodes;
+	if (!nodePath.empty())
 	{
+		const ai::cNavigationMesh::sNaviNode &node0 = navi.m_naviNodes[nodePath[0]];
+		wallNodes.insert(node0.adjacent[0]);
+		wallNodes.insert(node0.adjacent[1]);
+		wallNodes.insert(node0.adjacent[2]);
+
+		if (nodePath.size() > 1)
+		{
+			const ai::cNavigationMesh::sNaviNode &node1 = navi.m_naviNodes[nodePath.back()];
+			wallNodes.insert(node1.adjacent[0]);
+			wallNodes.insert(node1.adjacent[1]);
+			wallNodes.insert(node1.adjacent[2]);
+		}
+
+		for (auto idx : nodePath)
+			wallNodes.insert(idx);
+	}
+
+	for (auto idx : wallNodes)
+	{
+		if (idx < 0)
+			continue;
+
 		const ai::cNavigationMesh::sNaviNode &node = navi.m_naviNodes[idx];
 		const int idxs[] = { node.idx1, node.idx2, node.idx3 };
 		for (int i = 0; i < 3; ++i)
