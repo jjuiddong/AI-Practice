@@ -18,6 +18,9 @@ cGlobal::~cGlobal()
 }
 
 
+// node : 충돌 체크할 유닛 Node
+// srcBSphere : 충돌 체크할 agent bounding Sphere
+// out : 충돌 된 유닛으 Bounding Sphere를 리턴한다.
 cNode* cGlobal::IsCollisionUnit(
 	const cNode *node
 	, const cBoundingSphere &srcBSphere
@@ -48,7 +51,11 @@ bool cGlobal::IsCollisionWall(
 	const cBoundingSphere &bsphere
 	, OUT cBoundingPlane &out)
 {
-	const vector<cBoundingPlane> &wallPlanes = m_main->m_wallPlanes;
+	set<int> nodeIndices;
+	m_main->m_navi.GetNodesFromPosition(bsphere.GetPos(), nodeIndices);
+	vector<cBoundingPlane> wallPlanes;
+	m_main->m_navi.GetWallPlane(nodeIndices, wallPlanes);
+
 	int cnt = 0;
 	cBoundingPlane nearBPlane[2]; // most near 2 bplane
 	Vector3 collisionPos[2];
@@ -126,10 +133,47 @@ bool cGlobal::IsCollisionWall(
 		return true;
 	}
 
-	//if (mostNearIdx >= 0)
-	//	out = wallPlanes[mostNearIdx];
-	//return (mostNearIdx >= 0);
 	return false;
+}
+
+
+// wall, unit 충돌체크 후, 결과정보를 리턴한다.
+// return type : 충돌 시 true
+bool cGlobal::IsCollision(const cNode *srcNode
+	, const cBoundingSphere &srcBSphere
+	, OUT sCollisionResult &out)
+{
+	cBoundingSphere bsphere;
+	cNode *colNode = IsCollisionUnit(srcNode, srcBSphere, bsphere);
+	const bool col1 = (colNode) ? true : false;
+
+	cBoundingPlane bplane;
+	const bool col2 = IsCollisionWall(srcBSphere, bplane);
+
+	if (!col1 && !col2)
+		return false;
+
+	if (col1 && !col2)
+	{
+		out.type = 1;
+		out.bsphere = bsphere;
+		out.node = colNode;
+	}
+	else if (col2 && !col1)
+	{
+		out.type = 2;
+		out.bplane = bplane;
+	}
+	else // col1 && col2
+	{
+		// 벽과 유닛에 동시에 충돌
+		out.type = 3;
+		out.bplane = bplane;
+		out.bsphere = bsphere;
+		out.node = colNode;
+	}
+
+	return true;
 }
 
 
@@ -138,37 +182,86 @@ bool cGlobal::IsCollisionWall(
 //		  1: collision unit
 //		  2: collision plane
 int cGlobal::IsCollisionByRay(const Ray &ray
-	, OUT graphic::cBoundingSphere *outSphere //= NULL
-	, OUT graphic::cBoundingPlane *outPlane //= NULL
+	, const cNode *srcNode
+	, OUT cBoundingSphere *outSphere //= NULL
+	, OUT cBoundingPlane *outPlane //= NULL
 	, OUT float *outDistance //= NULL
 )
 {
-	const vector<cBoundingPlane> &wallPlanes = m_main->m_wallPlanes;
+	//const vector<cBoundingPlane> &wallPlanes = m_main->m_wallPlanes;
+	set<int> nodeIndices;
+	m_main->m_navi.GetNodesFromPosition(ray.orig, nodeIndices);
+	vector<cBoundingPlane> wallPlanes;
+	m_main->m_navi.GetWallPlane(nodeIndices, wallPlanes);
 
-	int mostNearIdx = -1;
-	float mostNearLen = FLT_MAX;
-	for (u_int i = 0; i < wallPlanes.size(); ++i)
+	// Check Unit
+	int mostNearIdx1 = -1;
+	float mostNearLen1 = FLT_MAX;
+	const vector<cZealot*> &zealots = m_main->m_zealots;
+	for (u_int i=0; i < zealots.size(); ++i)
 	{
-		const auto &bplane = wallPlanes[i];
-		float distance = 0;
-		if (bplane.Pick(ray, &distance))
+		auto &zealot = zealots[i];
+		if (zealot == srcNode)
+			continue;
+
+		cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
+		float distance = FLT_MAX;
+		if (bsphere.Pick(ray, &distance))
 		{
-			if (mostNearLen > distance)
+			if (mostNearLen1 > distance)
 			{
-				mostNearIdx = i;
-				mostNearLen = distance;
+				mostNearIdx1 = i;
+				mostNearLen1 = distance;
 			}
 		}
 	}
 
-	if (mostNearIdx >= 0)
+	// Check Wall
+	int mostNearIdx2 = -1;
+	float mostNearLen2 = FLT_MAX;
+	for (u_int i = 0; i < wallPlanes.size(); ++i)
 	{
-		if (outPlane)
-			*outPlane = wallPlanes[mostNearIdx];
-		if (outDistance)
-			*outDistance = mostNearLen;
-		return 2;
+		const auto &bplane = wallPlanes[i];
+		float distance = FLT_MAX;
+		if (bplane.Pick(ray, &distance))
+		{
+			if (mostNearLen2 > distance)
+			{
+				mostNearIdx2 = i;
+				mostNearLen2 = distance;
+			}
+		}
 	}
 
-	return 0;
+	int type = 0;
+	if ((mostNearIdx1 >= 0) && (mostNearIdx2 < 0))
+		type = 1;
+	else if ((mostNearIdx2 >= 0) && (mostNearIdx1 < 0))
+		type = 2;
+	else if (((mostNearIdx2 >= 0) && (mostNearIdx1 >= 0)) && (mostNearLen1 < mostNearLen2))
+		type = 1;
+	else if (((mostNearIdx2 >= 0) && (mostNearIdx1 >= 0)) && (mostNearLen1 > mostNearLen2))
+		type = 2;
+
+	if (1 == type)
+	{
+		if (outSphere)
+		{
+			auto &zealot = zealots[mostNearIdx1];
+			*outSphere = zealot->m_boundingSphere * zealot->m_transform;
+			// 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
+			outSphere->SetPos(zealot->m_transform.pos);
+		}
+		if (outDistance)
+			*outDistance = mostNearLen1;
+	}
+	else if (2 == type)
+	{
+		if (outPlane)
+			*outPlane = wallPlanes[mostNearIdx2];
+		if (outDistance)
+			*outDistance = mostNearLen2;
+	}
+
+	return type;
 }

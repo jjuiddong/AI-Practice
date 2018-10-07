@@ -73,50 +73,14 @@ void cZealotGroupBrain::Move(const Vector3 &dest)
 	vector<cBoundingPlane> &wallPlanes = ((cViewer*)g_application)->m_wallPlanes;
 	wallPlanes.clear();
 
-
-	// 첫 번째, 마지막 노드의 인접노드에 붙은 Wall을 추가한다.
-	// 하나의 노드는 삼각형이기 때문에, 시작과 마지막에 Wall이 빠질 수도 있다.
+	// 지나가는 경로에 벽이 있으면, 충돌체크를 위해서 미리 저장해둔다.
 	set<int> wallNodes;
-	if (!nodePath.empty())
+	for (auto i : nodePath)
 	{
-		const ai::cNavigationMesh::sNaviNode &node0 = navi.m_naviNodes[nodePath[0]];
-		wallNodes.insert(node0.adjacent[0]);
-		wallNodes.insert(node0.adjacent[1]);
-		wallNodes.insert(node0.adjacent[2]);
-
-		if (nodePath.size() > 1)
-		{
-			const ai::cNavigationMesh::sNaviNode &node1 = navi.m_naviNodes[nodePath.back()];
-			wallNodes.insert(node1.adjacent[0]);
-			wallNodes.insert(node1.adjacent[1]);
-			wallNodes.insert(node1.adjacent[2]);
-		}
-
-		for (auto idx : nodePath)
-			wallNodes.insert(idx);
-	}
-
-	for (auto idx : wallNodes)
-	{
-		if (idx < 0)
-			continue;
-
-		const ai::cNavigationMesh::sNaviNode &node = navi.m_naviNodes[idx];
+		const ai::cNavigationMesh::sNaviNode &node = navi.m_naviNodes[i];
 		const int idxs[] = { node.idx1, node.idx2, node.idx3 };
-		for (int i = 0; i < 3; ++i)
-		{
-			if (node.adjacent[i] >= 0)
-				continue;
-
-			// no adjacent edge, we need collision plane
-			const Vector3 offsetY(0, 10, 0);
-			const Vector3 p1 = navi.m_vertices[idxs[i]];
-			const Vector3 p2 = navi.m_vertices[idxs[(i + 1) % 3]];
-			const Vector3 p3 = p1 + offsetY;
-			const Vector3 p4 = p2 + offsetY;
-
-			cBoundingPlane bplane(p3, p4, p2, p1);
-			wallPlanes.push_back(bplane);
-		}
+		for (int k=0; k < 3; ++k)
+			navi.GetNodesFromVertexIdx(idxs[k], wallNodes);
 	}
+	navi.GetWallPlane(wallNodes, wallPlanes);
 }

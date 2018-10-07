@@ -47,6 +47,16 @@ bool cZealot::Render(cRenderer &renderer
 )
 {
 	__super::Render(renderer, parentTm, flags);
+
+	if (1)
+	{
+		Transform tfm = m_transform;
+		tfm.scale = Vector3(1, 1, 1) * 0.2f;
+		renderer.m_textMgr.AddTextRender(renderer, m_id, m_name.wstr().c_str()
+			, cColor::WHITE, cColor::BLACK, BILLBOARD_TYPE::ALL_AXIS
+			, tfm, true);
+	}
+
 	return true;
 }
 

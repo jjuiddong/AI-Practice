@@ -20,7 +20,19 @@ public:
 	bool IsCollisionWall( const graphic::cBoundingSphere &bsphere
 		, OUT graphic::cBoundingPlane &out);
 
+
+	struct sCollisionResult {
+		int type; // 0: no collision, 1:bsphere, 2:bplane, 3:bsphere+bplane
+		graphic::cBoundingSphere bsphere;
+		graphic::cBoundingPlane bplane;
+		graphic::cNode *node;
+	};
+	bool IsCollision(const graphic::cNode *srcNode
+		, const graphic::cBoundingSphere &srcBSphere, OUT sCollisionResult &out);
+
+
 	int IsCollisionByRay(const Ray &ray
+		, const graphic::cNode *srcNode
 		, OUT graphic::cBoundingSphere *outSphere = NULL
 		, OUT graphic::cBoundingPlane *outPlane = NULL
 		, OUT float *outDistance = NULL);
