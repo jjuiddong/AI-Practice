@@ -183,9 +183,10 @@ bool cGlobal::IsCollision(const cNode *srcNode
 //		  2: collision plane
 int cGlobal::IsCollisionByRay(const Ray &ray
 	, const cNode *srcNode
-	, OUT cBoundingSphere *outSphere //= NULL
-	, OUT cBoundingPlane *outPlane //= NULL
-	, OUT float *outDistance //= NULL
+	//, OUT cBoundingSphere *outSphere //= NULL
+	//, OUT cBoundingPlane *outPlane //= NULL
+	//, OUT float *outDistance //= NULL
+	, OUT sCollisionResult &out
 )
 {
 	//const vector<cBoundingPlane> &wallPlanes = m_main->m_wallPlanes;
@@ -245,22 +246,19 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 
 	if (1 == type)
 	{
-		if (outSphere)
-		{
-			auto &zealot = zealots[mostNearIdx1];
-			*outSphere = zealot->m_boundingSphere * zealot->m_transform;
-			// 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
-			outSphere->SetPos(zealot->m_transform.pos);
-		}
-		if (outDistance)
-			*outDistance = mostNearLen1;
+		auto &zealot = zealots[mostNearIdx1];
+		out.type = 1;
+		out.bsphere = zealot->m_boundingSphere * zealot->m_transform;
+		// 모델 위치로 리턴한다. (SphereBox 중점은 모델위치와 약간 다르다)
+		out.bsphere.SetPos(zealot->m_transform.pos);
+		out.node = zealot;
+		out.distance = mostNearLen1;
 	}
 	else if (2 == type)
 	{
-		if (outPlane)
-			*outPlane = wallPlanes[mostNearIdx2];
-		if (outDistance)
-			*outDistance = mostNearLen2;
+		out.type = 2;
+		out.bplane = wallPlanes[mostNearIdx2];
+		out.distance = mostNearLen2;
 	}
 
 	return type;
