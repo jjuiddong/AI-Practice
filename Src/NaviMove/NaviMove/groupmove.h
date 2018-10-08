@@ -444,8 +444,6 @@ namespace ai
 			// 8 방향으로 충돌 체크한다.
 			const Ray ray(pos + Vector3(0, srcBSphere.GetPos().y, 0), dirs[i]);
 			float len = FLT_MAX;
-			//graphic::cBoundingPlane bplane;
-			//graphic::cBoundingSphere bsphere;
 			cGlobal::sCollisionResult colResult;
 			const int cResult = g_global.IsCollisionByRay(ray, m_agent
 				, srcBSphere.GetRadius(), colResult);

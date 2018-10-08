@@ -40,20 +40,33 @@ void cZealotGroupBrain::Move(const Vector3 &dest)
 	center /= m_children.size();
 
 	ai::cNavigationMesh &navi = ((cViewer*)g_application)->m_navi;
+
+	//vector<Vector3> path;
+	//vector<int> nodePath;
+	//if (!navi.Find(center, dest, path, nodePath))
+	//{
+	//	assert(0);
+	//	return;
+	//}
+
+	//for (auto &p : m_children.m_Seq)
+	//{
+	//	cBrain<cZealot> *actor = dynamic_cast<cBrain<cZealot>*>(p);
+	//	const Vector3 offset = actor->m_agent->m_transform.pos - center;
+	//	actor->SetAction(new ai::cGroupMove<cZealot>(actor->m_agent, path, offset));
+	//}
+
 	vector<Vector3> path;
 	vector<int> nodePath;
-	if (!navi.Find(center, dest, path, nodePath))
-	{
-		assert(0);
-		return;
-	}
-
 	for (auto &p : m_children.m_Seq)
 	{
 		cBrain<cZealot> *actor = dynamic_cast<cBrain<cZealot>*>(p);
-		const Vector3 offset = actor->m_agent->m_transform.pos - center;
-		actor->SetAction(new ai::cGroupMove<cZealot>(actor->m_agent, path, offset));
+		path.clear();
+		nodePath.clear();
+		if (navi.Find(actor->m_agent->m_transform.pos, dest, path, nodePath))
+			actor->SetAction(new ai::cGroupMove<cZealot>(actor->m_agent, path, Vector3(0,0,0)));
 	}
+
 
 	m_agent->m_nodePath = nodePath;
 

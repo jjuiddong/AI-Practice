@@ -80,7 +80,7 @@ bool cViewer::OnInit()
 		cZealot *zealot = new cZealot();
 		zealot->Create(m_renderer);
 		zealot->m_name.Format("Zealot%d", i);
-		zealot->m_transform.pos = Vector3(0.6f*i, 0, 0);
+		zealot->m_transform.pos = Vector3(0.6f*(i%5) -2.f, 0, 0.6f*(i/5));
 		m_terrain.AddModel(zealot);
 		m_zealots.push_back(zealot);
 	}

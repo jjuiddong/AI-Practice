@@ -50,6 +50,16 @@ bool cZealot::Render(cRenderer &renderer
 
 	if (1)
 	{
+		// NextPos Render
+		{
+			Transform tfm = m_transform;
+			tfm.pos = m_nextPos;
+			tfm.scale = Vector3(1, 1, 1) * 0.2f;
+			renderer.m_dbgBox.SetBox(tfm);
+			renderer.m_dbgBox.SetColor(cColor::YELLOW);
+			renderer.m_dbgBox.Render(renderer);
+		}
+
 		Transform tfm = m_transform;
 		tfm.scale = Vector3(1, 1, 1) * 0.1f;
 		renderer.m_textMgr.AddTextRender(renderer, m_id, m_name.wstr().c_str()
