@@ -37,7 +37,7 @@ public:
 	graphic::cDbgLineList m_nodeLineList;
 	graphic::cTextManager m_nodeTextMgr;
 
-	enum { MAX_PLAYER = 5 };
+	enum { MAX_PLAYER = 10 };
 	vector<cZealot*> m_zealots;
 	cGroup m_group;
 	bool m_isWireframe;

@@ -366,7 +366,7 @@ namespace ai
 			// 벽과 충돌하면, 위치를 보정한다.
 			Vector3 collisionPos;
 			result.bplane.Collision(srcBSphere, &collisionPos);
-			pos = collisionPos + (result.bplane.Normal() * srcBSphere.GetRadius());
+			pos = collisionPos + (result.bplane.Normal() * srcBSphere.GetRadius() * 1.1f);
 			pos.y = curPos.y;
 
 			forward = result.bplane.Normal();
@@ -447,7 +447,8 @@ namespace ai
 			//graphic::cBoundingPlane bplane;
 			//graphic::cBoundingSphere bsphere;
 			cGlobal::sCollisionResult colResult;
-			const int cResult = g_global.IsCollisionByRay(ray, m_agent, colResult);
+			const int cResult = g_global.IsCollisionByRay(ray, m_agent
+				, srcBSphere.GetRadius(), colResult);
 			if (colResult.distance < (srcBSphere.GetRadius() * 1.3f))
 				continue; // 장애물이 있으면, 해당 방향은 무시
 

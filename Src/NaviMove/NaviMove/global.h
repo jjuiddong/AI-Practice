@@ -33,10 +33,8 @@ public:
 
 	int IsCollisionByRay(const Ray &ray
 		, const graphic::cNode *srcNode
+		, const float radius
 		, OUT sCollisionResult &out);
-		//, OUT graphic::cBoundingSphere *outSphere = NULL
-		//, OUT graphic::cBoundingPlane *outPlane = NULL
-		//, OUT float *outDistance = NULL);
 
 
 public:

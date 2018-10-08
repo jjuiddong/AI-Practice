@@ -183,9 +183,7 @@ bool cGlobal::IsCollision(const cNode *srcNode
 //		  2: collision plane
 int cGlobal::IsCollisionByRay(const Ray &ray
 	, const cNode *srcNode
-	//, OUT cBoundingSphere *outSphere //= NULL
-	//, OUT cBoundingPlane *outPlane //= NULL
-	//, OUT float *outDistance //= NULL
+	, const float radius
 	, OUT sCollisionResult &out
 )
 {
@@ -224,7 +222,8 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	{
 		const auto &bplane = wallPlanes[i];
 		float distance = FLT_MAX;
-		if (bplane.Pick(ray, &distance))
+//		if (bplane.Pick(ray, &distance))
+		if (bplane.Intersect(ray, radius, &distance))
 		{
 			if (mostNearLen2 > distance)
 			{
@@ -259,6 +258,11 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 		out.type = 2;
 		out.bplane = wallPlanes[mostNearIdx2];
 		out.distance = mostNearLen2;
+	}
+	else
+	{
+		out.type = 0;
+		out.distance = FLT_MAX;
 	}
 
 	return type;
