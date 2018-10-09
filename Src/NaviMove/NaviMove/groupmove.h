@@ -20,18 +20,6 @@ namespace ai
 		virtual bool StartAction() override;
 		virtual bool ActionExecute(const float deltaSeconds) override;
 
-		Vector3 UnitCollisionAction(const Vector3 &curPos, const Vector3 &nextPos
-			, const graphic::cBoundingSphere &srcBSphere
-			, const graphic::cBoundingSphere &collSphere
-			, const graphic::cNode *collisionNode
-		);
-
-		Vector3 WallCollisionAction(const Vector3 &curPos, const Vector3 &nextPos
-			, const graphic::cBoundingSphere &srcBSphere
-			, const graphic::cBoundingPlane &bplane
-			, const float deltaSeconds
-		);
-
 		bool CollisionAction(const Vector3 &curPos, const Vector3 &nextPos
 			, const graphic::cBoundingSphere &srcBSphere
 			, const cGlobal::sCollisionResult &result
@@ -91,6 +79,7 @@ namespace ai
 	{
 		m_idx = 0;
 		NextMove(0);
+		m_agent->m_route = m_path;
 		m_agent->SetAnimation("Walk");
 		return true;
 	}
@@ -163,6 +152,7 @@ namespace ai
 				Vector3 newDir = m_dest - curPos;
 				newDir.y = 0;
 				newDir.Normalize();
+				m_agent->m_isCollisionTurn = false; // for debuggin
 
 				const float dot = newDir.DotProduct(m_dir);
 				if (dot < 0.99f)
@@ -185,158 +175,6 @@ namespace ai
 
 		m_oldDistance = distance;
 		return true;
-	}
-
-
-	//---------------------------------------------------------------------------------------
-	// UnitCollision
-	// 유닛과 충돌했을 경우
-	// bsphere : Agent 유닛의 bounding sphere
-	// collSphere : 충돌된 유닛의 bounding sphere
-	// collisionNode : 충돌된 유닛
-	//---------------------------------------------------------------------------------------
-	template<class T>
-	Vector3 cGroupMove<T>::UnitCollisionAction(
-		const Vector3 &curPos
-		, const Vector3 &nextPos
-		, const graphic::cBoundingSphere &bsphere
-		, const graphic::cBoundingSphere &collSphere
-		, const graphic::cNode *collisionNode
-	)
-	{
-		Vector3 newPos = nextPos;
-
-		Vector3 opponentDir;
-		if (const cZealot *zealot = dynamic_cast<const cZealot*>(collisionNode))
-			if (zealot->m_brain->IsCurrentAction(eActionType::GROUP_MOVE))
-				if (cGroupMove *movAction = dynamic_cast<cGroupMove*>(zealot->m_brain->GetAction()))
-					opponentDir = movAction->m_dir;
-
-		Vector3 toMe = (curPos - collSphere.GetPos()).Normal();
-		Vector3 toDest = (m_dest - collSphere.GetPos()).Normal();
-
-		bool isWait = false;
-
-		// 다른 이동 객체와 충돌 했다면, 
-		// 상대방의 이동 방향과 같다면, 선회하지 않고, 잠깐 기다린다.
-		// 만약, 상대방이 자신보다 앞에 있고, 같은 방향으로 이동 중이라면
-		if ((toMe.DotProduct(opponentDir) < 0.f) // 자신을 등지고, 앞으로 전진한다면,
-			&& (m_dir.DotProduct(opponentDir) > 0.f)) // 같은 방향으로 가고 있다면
-		{
-			// 잠깐 대기했다가 전진한다.
-			m_collisionInterval = 0.3f;
-			isWait = true;
-			m_isWaiting = isWait;
-			newPos = curPos; // 현재 위치로 유지
-		}
-		//if (!toMe.IsEmpty() && (isWait || (toMe.DotProduct(toDest) >= 0)))
-		else if (!toMe.IsEmpty() && (toMe.DotProduct(m_dir) >= 0.f))
-		{
-			// 충돌했지만, 앞서 나가고 있는 경우, 계속 앞으로 진행한다.
-			m_isWaiting = false;
-			newPos = nextPos;
-			m_collisionInterval = 0.f;
-		}
-		else
-		{
-			// 충돌 객체와 가까워지는 상황일 경우
-			// 충돌 객체의 원의 접선 벡터 방향으로, 방향을 튼다.
-			Vector3 newDir = Vector3(0, 1, 0).CrossProduct(toMe).Normal();
-			if (newDir.DotProduct(m_dir) < 0)
-				newDir = -newDir;
-
-			Quaternion q;
-			q.SetRotationArc(Vector3(0, 0, -1), newDir);
-			m_fromDir = m_agent->m_transform.rot;
-			m_toDir = q;
-
-			m_rotateTime = 0;
-			m_collisionInterval = 0.3f;
-			m_dir = newDir;
-			newPos = collSphere.GetPos() + toMe * (collSphere.GetRadius() + bsphere.GetRadius());
-			newPos.y = nextPos.y;
-			//dbg::Log("collision \n");
-		}
-
-		return newPos;
-	}
-
-
-	//---------------------------------------------------------------------------------------
-	// WallCollision
-	// 벽과 충돌했을 경우
-	//---------------------------------------------------------------------------------------
-	template<class T>
-	Vector3 cGroupMove<T>::WallCollisionAction(const Vector3 &curPos, const Vector3 &nextPos
-		, const graphic::cBoundingSphere &bsphere
-		, const graphic::cBoundingPlane &bplane
-		, const float deltaSeconds
-	)
-	{
-		// 벽과 충돌하면 8방향으로 주변을 검색한 후,
-		// 이동 경로에 가장 가까운 방향으로 방향을 전환한다.
-		Vector3 dirs[8];
-		dirs[0] = bplane.Normal();
-		dirs[2] = Vector3(0, 1, 0).CrossProduct(bplane.Normal()).Normal();
-		dirs[1] = (dirs[2] + dirs[0]).Normal();
-		dirs[4] = -dirs[0];
-		dirs[3] = (dirs[2] + dirs[4]).Normal();
-		dirs[6] = -dirs[2];
-		dirs[5] = (dirs[6] + dirs[4]).Normal();
-		dirs[7] = (dirs[6] + dirs[0]).Normal();
-
-		int dirIdx = - 1;
-		float minLen = FLT_MAX;
-		for (int i = 0; i < 8; ++i)
-		{
-			const Ray ray(curPos + Vector3(0,1,0), dirs[i]);
-			float len = FLT_MAX;
-			g_global.IsCollisionByRay(ray, NULL, NULL, &len);
-			if (len < bsphere.GetRadius())
-				continue;
-
-			const Vector3 pos = curPos + dirs[i] * bsphere.GetRadius();
-			const float dist = pos.Distance(m_dest);
-			if (dist < minLen)
-			{
-				dirIdx = i;
-				minLen = dist;
-			}
-		}
-
-		if (dirIdx < 0)
-		{
-			//assert(0);
-			return nextPos;
-		}
-
-		// 충돌 객체와 가까워지는 상황일 경우
-		// 충돌 객체의 원의 접선 벡터 방향으로, 방향을 튼다.
-		Vector3 newDir = dirs[dirIdx];
-		Vector3 collisionPos = curPos;
-		bplane.Collision(bsphere, &collisionPos);	
-		collisionPos.y = curPos.y;
-		if (collisionPos != curPos)
-		{
-			//collisionPos = collisionPos - (m_dir * bsphere.GetRadius() * 1.1f);
-			collisionPos = collisionPos + (bplane.Normal() * bsphere.GetRadius());
-			collisionPos.y = curPos.y;
-		}
-
-		Quaternion q;
-		q.SetRotationArc(Vector3(0, 0, -1), newDir);
-		m_fromDir = m_agent->m_transform.rot;
-		m_toDir = q;
-
-		m_rotateTime = 0;
-		m_collisionInterval = 0.3f;
-		m_dir = newDir;
-		Vector3 newPos = collisionPos + newDir * m_speed * deltaSeconds;
-
-		m_dest -= m_offset;
-		m_offset = Vector3(0, 0, 0);
-
-		return newPos;
 	}
 
 
@@ -436,8 +274,8 @@ namespace ai
 		int dirIdx = -1; // 이동할 방향
 		int collisionType = 0; // 8방향에서 선택된 방향의 충돌 타입 (unit or wall)
 		graphic::cNode *collisionNode = NULL;
-		graphic::cBoundingPlane collisionBPlane;
-		graphic::cBoundingSphere collisionBSphere;
+		cBoundingPlane collisionBPlane;
+		cBoundingSphere collisionBSphere;
 		float minLen = FLT_MAX;
 		for (int i = 0; i < 8; ++i)
 		{
@@ -447,7 +285,14 @@ namespace ai
 			cGlobal::sCollisionResult colResult;
 			const int cResult = g_global.IsCollisionByRay(ray, m_agent
 				, srcBSphere.GetRadius(), colResult);
-			if (colResult.distance < (srcBSphere.GetRadius() * 1.3f))
+			const bool isBlock = (colResult.distance < (srcBSphere.GetRadius() * 1.3f));
+
+			// for debugging
+			m_agent->m_dirs[i].use = false;
+			m_agent->m_dirs[i].dir = dirs[i];
+			m_agent->m_dirs[i].len = colResult.distance;
+			
+			if (isBlock)
 				continue; // 장애물이 있으면, 해당 방향은 무시
 
 			// 이동 경로와 가장 가까운 방향을 선택한다.
@@ -476,12 +321,14 @@ namespace ai
 		// 목적지가 유닛에 의해 막혀있고, 유닛이 정지한 상태라면, 이동을 멈춘다.
 		if (1 == collisionType)
 		{
-			if (const cZealot *zealot = dynamic_cast<const cZealot*>(collisionNode))
-				if (!zealot->m_brain->IsCurrentAction(eActionType::GROUP_MOVE))
-					return false;
+			//if (const cZealot *zealot = dynamic_cast<const cZealot*>(collisionNode))
+			//	if (!zealot->m_brain->IsCurrentAction(eActionType::GROUP_MOVE))
+			//		return false;
 		}
 
 		const Vector3 newDir = dirs[dirIdx];
+		m_agent->m_dirs[dirIdx].use = true;
+		m_agent->m_isCollisionTurn = true;
 
 		Quaternion q;
 		q.SetRotationArc(Vector3(0, 0, -1), newDir);
@@ -522,6 +369,9 @@ namespace ai
 		m_rotateTime = 0;
 		m_dest = dest;
 		m_prvPos = curPos;
+
+		m_agent->m_isCollisionTurn = false; // for debugging
+
 		return true;
 	}
 

@@ -71,8 +71,8 @@ bool cViewer::OnInit()
 	m_camera.m_boundingHSphere.SetBoundingHalfSphere(Vector3(0, 0, 0), 500);
 
 	m_ground.Create(m_renderer, 100, 100, 1, eVertexType::POSITION);
-	m_ground.m_mtrl.InitGray();
-	m_ground.m_primitiveType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+//	m_ground.m_mtrl.InitGray();
+//	m_ground.m_primitiveType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL,
 		Vector4(0.2f, 0.2f, 0.2f, 1), Vector4(0.9f, 0.9f, 0.9f, 1),

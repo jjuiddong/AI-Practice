@@ -27,23 +27,27 @@ protected:
 
 
 public:
+	cImGui m_gui;
 	graphic::cCamera3D m_camera;
 	graphic::cTerrain m_terrain;
 	vector<graphic::cNode*> m_walls;
 	graphic::cCascadedShadowMap m_ccsm;
 	ai::cNavigationMesh m_navi;
 	graphic::cDbgAxis m_dbgAxis;
-	graphic::cDbgLineList m_pathLineList;
+	//graphic::cDbgLineList m_pathLineList;
 	graphic::cDbgLineList m_nodeLineList;
 	graphic::cTextManager m_nodeTextMgr;
+	graphic::cRect2D m_rect2D;
+	graphic::cDbgFrustum m_dbgFrustum;
 
 	enum { MAX_PLAYER = 5 };
 	vector<cZealot*> m_zealots;
+	vector<cZealot*> m_select; // reference
 	cGroup m_group;
 	bool m_isWireframe;
 
-	vector<graphic::cBoundingPlane> m_wallPlanes;
-
+	bool m_isDragRect;
+	sf::Vector2i m_clickPt;
 	sf::Vector2i m_curPos;
 	Plane m_groundPlane1, m_groundPlane2;
 	float m_moveLen;

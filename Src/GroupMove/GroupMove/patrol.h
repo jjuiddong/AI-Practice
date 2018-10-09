@@ -15,12 +15,12 @@ namespace ai
 		, public common::cMemoryPool< cPatrol<T> >
 	{
 	public:
-		cPatrol(ai::iActorInterface<T> *agent, const Vector3 &dest, const float speed = 3.f)
+		cPatrol(T *agent, const Vector3 &dest, const float speed = 3.f)
 			: cAction<T>(agent, "patrol", "", eActionType::PATROL)
 		{
 			m_patrolPos = 0;
 			m_dest1 = dest;
-			m_dest2 = m_agent->aiGetTransform().pos;
+			m_dest2 = m_agent->m_transform.pos;
 		}
 
 

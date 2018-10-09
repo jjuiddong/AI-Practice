@@ -4,6 +4,9 @@
 // 2017-11-18
 //	- route
 //
+// 2018-10-09
+//	- dirs
+//
 #pragma once
 
 
@@ -24,12 +27,21 @@ protected:
 
 
 public:
-	cZealotBrain *m_brain;
 	bool m_isLoaded;
+	bool m_isSelect;
+	cZealotBrain *m_brain;
 	graphic::cCube *m_collisionWall;
 
 	// for debugging
 	vector<Vector3> m_route;
+
+	bool m_isCollisionTurn; // 충돌후 선회
+	struct sCandidateDir {
+		bool use;
+		float len;
+		Vector3 dir;
+	};
+	sCandidateDir m_dirs[8];
 	Vector3 m_nextPos;
 	Vector3 m_dir;
 };

@@ -51,48 +51,57 @@ bool cGlobal::IsCollisionWall(
 	const cBoundingSphere &bsphere
 	, OUT cBoundingPlane &out)
 {
-	set<int> nodeIndices;
-	m_main->m_navi.GetNodesFromPosition(bsphere.GetPos(), nodeIndices);
-	vector<cBoundingPlane> wallPlanes;
-	m_main->m_navi.GetWallPlane(nodeIndices, wallPlanes);
-
 	int cnt = 0;
 	cBoundingPlane nearBPlane[2]; // most near 2 bplane
 	Vector3 collisionPos[2];
 
 	float mostNearLen1 = FLT_MAX;
 	float mostNearLen2 = FLT_MAX;
-	for (u_int i = 0; i < wallPlanes.size(); ++i)
+
+	set<int> nodeIndices;
+	m_main->m_navi.GetNodesFromPosition(bsphere.GetPos(), nodeIndices);
+	for (auto &nodeIdx : nodeIndices)
 	{
-		const auto &bplane = wallPlanes[i];
-		float distance = FLT_MAX;
-		Vector3 pos;
-		if (bplane.Collision(bsphere, &pos, &distance))
+		auto it = m_main->m_navi.m_wallMap.find(nodeIdx);
+		if (m_main->m_navi.m_wallMap.end() == it)
+			continue;
+
+		const auto &wallIndices = it->second;
+		for (u_int i = 0; i < wallIndices.size(); ++i)
 		{
-			if (mostNearLen1 > distance)
+			const auto &bplane = m_main->m_navi.m_walls[wallIndices[i]].bplane;
+			float distance = FLT_MAX;
+			Vector3 pos;
+			if (bplane.Collision(bsphere, &pos, &distance))
 			{
-				if (cnt >= 1)
+				// for collision debugging
+				m_main->m_navi.m_walls[wallIndices[i]].collision = true;
+
+				if (mostNearLen1 > distance)
+				{
+					if (cnt >= 1)
+					{
+						cnt = 2;
+						mostNearLen2 = mostNearLen1;
+						nearBPlane[1] = nearBPlane[0];
+						collisionPos[1] = collisionPos[0];
+					}
+					else
+					{
+						cnt = 1;
+					}
+
+					mostNearLen1 = distance;
+					nearBPlane[0] = bplane;
+					collisionPos[0] = pos;
+				}
+				else if (mostNearLen2 > distance)
 				{
 					cnt = 2;
-					mostNearLen2 = mostNearLen1;
-					nearBPlane[1] = nearBPlane[0];
-					collisionPos[1] = collisionPos[0];
+					mostNearLen2 = distance;
+					nearBPlane[1] = bplane;
+					collisionPos[1] = pos;
 				}
-				else
-				{
-					cnt = 1;
-				}
-
-				mostNearLen1 = distance;
-				nearBPlane[0] = bplane;
-				collisionPos[0] = pos;
-			}
-			else if (mostNearLen2 > distance)
-			{
-				cnt = 2;
-				mostNearLen2 = distance;
-				nearBPlane[1] = bplane;
-				collisionPos[1] = pos;
 			}
 		}
 	}
@@ -187,12 +196,6 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	, OUT sCollisionResult &out
 )
 {
-	//const vector<cBoundingPlane> &wallPlanes = m_main->m_wallPlanes;
-	set<int> nodeIndices;
-	m_main->m_navi.GetNodesFromPosition(ray.orig, nodeIndices);
-	vector<cBoundingPlane> wallPlanes;
-	m_main->m_navi.GetWallPlane(nodeIndices, wallPlanes);
-
 	// Check Unit
 	int mostNearIdx1 = -1;
 	float mostNearLen1 = FLT_MAX;
@@ -216,19 +219,29 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	}
 
 	// Check Wall
+	set<int> nodeIndices;
+	m_main->m_navi.GetNodesFromPosition(ray.orig, nodeIndices);
+
 	int mostNearIdx2 = -1;
 	float mostNearLen2 = FLT_MAX;
-	for (u_int i = 0; i < wallPlanes.size(); ++i)
+	for (auto &nodeIdx : nodeIndices)
 	{
-		const auto &bplane = wallPlanes[i];
-		float distance = FLT_MAX;
-//		if (bplane.Pick(ray, &distance))
-		if (bplane.Intersect(ray, radius, &distance))
+		auto it = m_main->m_navi.m_wallMap.find(nodeIdx);
+		if (m_main->m_navi.m_wallMap.end() == it)
+			continue;
+
+		const auto &wallIndices = it->second;
+		for (u_int i=0; i < wallIndices.size(); ++i)
 		{
-			if (mostNearLen2 > distance)
+			const auto &bplane = m_main->m_navi.m_walls[wallIndices[i]].bplane;// wallPlanes[i];
+			float distance = FLT_MAX;
+			if (bplane.Intersect(ray, radius, &distance))
 			{
-				mostNearIdx2 = i;
-				mostNearLen2 = distance;
+				if (mostNearLen2 > distance)
+				{
+					mostNearIdx2 = i;
+					mostNearLen2 = distance;
+				}
 			}
 		}
 	}
@@ -256,7 +269,7 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	else if (2 == type)
 	{
 		out.type = 2;
-		out.bplane = wallPlanes[mostNearIdx2];
+		out.bplane = m_main->m_navi.m_walls[mostNearIdx2].bplane;
 		out.distance = mostNearLen2;
 	}
 	else

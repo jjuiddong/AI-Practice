@@ -19,7 +19,7 @@ public:
 
 public:
 	graphic::cCamera3D m_camera;
-	graphic::cGrid m_ground;
+	graphic::cGridLine m_ground;
 
 	enum { MAX_PLAYER = 9 };
 	vector<cZealot*> m_zealots;

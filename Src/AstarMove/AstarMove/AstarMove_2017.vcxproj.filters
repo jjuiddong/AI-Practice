@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="astarmove.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="zealot.cpp" />
+    <ClCompile Include="zealotai.cpp" />
+    <ClCompile Include="zealotgroup.cpp" />
+    <ClCompile Include="groupmove.cpp">
+      <Filter>action</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="astarmove.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="zealot.h" />
+    <ClInclude Include="zealotai.h" />
+    <ClInclude Include="zealotgroup.h" />
+    <ClInclude Include="move2.h">
+      <Filter>action</Filter>
+    </ClInclude>
+    <ClInclude Include="groupmove.h">
+      <Filter>action</Filter>
+    </ClInclude>
+    <ClInclude Include="patrol.h">
+      <Filter>action</Filter>
+    </ClInclude>
+    <ClInclude Include="attack.h">
+      <Filter>action</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="action">
+      <UniqueIdentifier>{b0d09d70-7f46-4ffb-ac9f-116509d8c892}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

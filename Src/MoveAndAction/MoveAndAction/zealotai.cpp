@@ -3,12 +3,12 @@
 #include "zealotai.h"
 
 
-cZealotAI::cZealotAI(ai::iActorInterface<cZealot> *agent)
-	: ai::cActor<cZealot>(agent)
+cZealotBrain::cZealotBrain(cZealot *agent)
+	: ai::cBrain<cZealot>(agent)
 {
 }
 
-cZealotAI::~cZealotAI()
+cZealotBrain::~cZealotBrain()
 {
 }
 

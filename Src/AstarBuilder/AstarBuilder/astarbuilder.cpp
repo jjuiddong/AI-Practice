@@ -31,15 +31,13 @@ cViewer::cViewer()
 
 cViewer::~cViewer()
 {
-	m_gui.Shutdown();
+	//m_gui.Shutdown();
 	graphic::ReleaseRenderer();
 }
 
 
 bool cViewer::OnInit()
 {
-	DragAcceptFiles(m_hWnd, TRUE);
-
 	dbg::RemoveLog();
 
 	const float WINSIZE_X = float(m_windowRect.right - m_windowRect.left);
@@ -47,12 +45,12 @@ bool cViewer::OnInit()
 	m_camera.SetCamera(Vector3(-10, 22, -10), Vector3(10, 0, 10), Vector3(0, 1, 0));
 	m_camera.SetProjection(MATH_PI / 4.f, (float)WINSIZE_X / (float)WINSIZE_Y, 1.0f, 10000.f);
 	m_camera.SetViewPort(WINSIZE_X, WINSIZE_Y);
-	m_camera.m_isMovingLimitation = true;
+	//m_camera.m_isMovingLimitation = true;
 	m_camera.m_boundingHSphere.SetBoundingHalfSphere(Vector3(0, 0, 0), 500);
 
 	m_ground.Create(m_renderer, 100, 100, 1, eVertexType::POSITION);
 	m_ground.m_mtrl.InitGray();
-	m_ground.m_primitiveType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	//m_ground.m_primitiveType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL,
 		Vector4(0.2f, 0.2f, 0.2f, 1), Vector4(0.9f, 0.9f, 0.9f, 1),
@@ -65,7 +63,7 @@ bool cViewer::OnInit()
 	cBoundingBox bbox2(Vector3(0, 0, 0), Vector3(1, 1, 1), Quaternion());
 	m_renderer.m_dbgAxis.SetAxis(bbox2, false);
 
-	m_gui.Init(m_hWnd, m_renderer.GetDevice(), m_renderer.GetDevContext(), NULL);
+	//m_gui.Init(m_hWnd, m_renderer.GetDevice(), m_renderer.GetDevContext(), NULL);
 
 	//m_terrain.Create()
 	cTerrainLoader loader(&m_terrain);
@@ -153,7 +151,7 @@ void cViewer::OnRender(const float deltaSeconds)
 {
 	cAutoCam cam(&m_camera);
 
-	m_gui.NewFrame();
+	//m_gui.NewFrame();
 
 	// Render
 	if (m_renderer.ClearScene())
@@ -193,7 +191,7 @@ void cViewer::OnRender(const float deltaSeconds)
 			p->Render(m_renderer);
 		}
 
-		m_gui.Render();
+		//m_gui.Render();
 
 		m_renderer.RenderAxis();
 		m_renderer.RenderFPS();
@@ -217,9 +215,9 @@ void cViewer::ChangeWindowSize()
 void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static bool maximizeWnd = false;
-	m_gui.WndProcHandler(m_hWnd, message, wParam, lParam);
-	if (ImGui::IsAnyItemHovered())
-		return;
+	//m_gui.WndProcHandler(m_hWnd, message, wParam, lParam);
+	//if (ImGui::IsAnyItemHovered())
+	//	return;
 
 	switch (message)
 	{

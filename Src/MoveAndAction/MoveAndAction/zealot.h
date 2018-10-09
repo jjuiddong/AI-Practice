@@ -5,9 +5,8 @@
 #pragma once
 
 
-class cZealotAI;
+class cZealotBrain;
 class cZealot : public graphic::cModel
-			, public ai::iActorInterface<cZealot>
 {
 public:
 	cZealot();
@@ -18,13 +17,6 @@ public:
 	virtual bool Update(graphic::cRenderer &renderer, const float deltaSeconds) override;
 
 
-	virtual Transform& aiGetTransform() override;
-	virtual void aiSetAnimation(const Str64 &animationName) override;
-
-
 public:
-	cZealotAI *m_ai;
+	cZealotBrain *m_ai;
 };
-
-
-inline Transform& cZealot::aiGetTransform() { return m_transform; }

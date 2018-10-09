@@ -8,6 +8,7 @@ INIT_FRAMEWORK(cViewer);
 cViewer::cViewer()
 	: m_groundPlane1(Vector3(0, 1, 0), 0)
 	, m_camera("main camera")
+	, m_isDragRect(false)
 {
 	m_windowName = L"Navigation Mesh Move";
 	const RECT r = { 0, 0, 1024, 768 };
@@ -36,6 +37,11 @@ bool cViewer::OnInit()
 
 	g_global.m_main = this;
 
+	m_gui.Init(m_hWnd, m_renderer.GetDevice(), m_renderer.GetDevContext(), NULL);
+	StrPath path1 = "../Media/extra_fonts/나눔고딕Bold.ttf";
+	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontFromFileTTF(path1.utf8().c_str(), 15, NULL, io.Fonts->GetGlyphRangesKorean());
+
 	cTerrainLoader loader(&m_terrain);
 	loader.Read(m_renderer, "../media2/wall2.trn");
 
@@ -59,6 +65,9 @@ bool cViewer::OnInit()
 		m_dbgAxis.SetAxis(bbox, false);
 	}
 
+	m_dbgFrustum.Create(m_renderer, Matrix44::Identity);
+	m_rect2D.SetColor(cColor::RED);
+
 	GetMainLight().Init(cLight::LIGHT_DIRECTIONAL);
 	const Vector3 lightPos(-400, 800, -300);
 	const Vector3 lightLookat(0, 0, 0);
@@ -73,7 +82,7 @@ bool cViewer::OnInit()
 		return false;
 	}
 
-	m_pathLineList.Create(m_renderer, 128, cColor::BLUE);
+	//m_pathLineList.Create(m_renderer, 128, cColor::BLUE);
 
 	for (int i = 0; i < MAX_PLAYER; ++i)
 	{
@@ -108,6 +117,7 @@ void cViewer::OnRender(const float deltaSeconds)
 {
 	cAutoCam cam(&m_camera);
 
+	m_gui.NewFrame();
 	GetMainCamera().Bind(m_renderer);
 	GetMainLight().Bind(m_renderer);
 	m_terrain.BuildCascadedShadowMap(m_renderer, m_ccsm);
@@ -125,7 +135,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_terrain.SetTechnique("ShadowMap");
 		m_terrain.RenderCascadedShadowMap(m_renderer, m_ccsm);
 
-		m_pathLineList.Render(m_renderer);
+		//m_pathLineList.Render(m_renderer);
 
 		m_nodeTextMgr.NewFrame();
 		if (1)
@@ -188,13 +198,73 @@ void cViewer::OnRender(const float deltaSeconds)
 				tfm.pos = Vector3(0, 0.2f, 0);
 				m_nodeLineList.Render(m_renderer, tfm.GetMatrixXM());
 			}
+
+			// Render Collision Wall
+			for (auto &wall : m_navi.m_walls)
+			{
+				if (wall.collision)
+				{
+					const float w = 0.01f;
+					m_renderer.m_dbgLine.SetColor(cColor::GREEN);
+					m_renderer.m_dbgLine.SetLine(wall.bplane.m_vertices[0]
+						, wall.bplane.m_vertices[1], w);
+					m_renderer.m_dbgLine.Render(m_renderer);
+					m_renderer.m_dbgLine.SetLine(wall.bplane.m_vertices[1]
+						, wall.bplane.m_vertices[2], w);
+					m_renderer.m_dbgLine.Render(m_renderer);
+					m_renderer.m_dbgLine.SetLine(wall.bplane.m_vertices[2]
+						, wall.bplane.m_vertices[3], w);
+					m_renderer.m_dbgLine.Render(m_renderer);
+					m_renderer.m_dbgLine.SetLine(wall.bplane.m_vertices[3]
+						, wall.bplane.m_vertices[0], w);
+					m_renderer.m_dbgLine.Render(m_renderer);
+				}
+			}
+			//for (auto &wall : m_navi.m_walls)
+			//	wall.collision = false;
 		}
+
+
+		if (m_isDragRect)
+		{
+			const Vector2 lt((float)m_clickPt.x, (float)m_clickPt.y);
+			const Vector2 rb((float)m_curPos.x, (float)m_curPos.y);
+			m_rect2D.SetRect(lt, rb, 1.f);
+			m_rect2D.Render(m_renderer);
+		}
+
+		//m_dbgFrustum.Render(m_renderer);
 		m_nodeTextMgr.Render(m_renderer);
 
-
-
 		m_dbgAxis.Render(m_renderer);
-		m_renderer.RenderFPS();
+		//m_renderer.RenderFPS();
+
+		// GUI
+		{
+			bool isOpen = true;
+			ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize 
+				| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
+			ImGui::SetNextWindowPos(ImVec2(0,0));
+			ImGui::SetNextWindowSize(ImVec2(500,100));
+			ImGui::SetNextWindowBgAlpha(0.f);
+			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+			ImGui::Begin("info", &isOpen, flags);
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)"
+				, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::Text("Ctrl + Left or Right Camera Move");
+			ImGui::Checkbox("DebugRender", &m_renderer.m_isDbgRender);
+			ImGui::SameLine();
+			ImGui::Checkbox("Wireframe", &m_isWireframe);
+			if (ImGui::Button("Clear Wall Plane (C)"))
+			{
+				for (auto &wall : m_navi.m_walls)
+					wall.collision = false;
+			}
+
+			ImGui::End();
+			ImGui::PopStyleColor();
+			m_gui.Render();
+		}
 
 		m_renderer.EndScene();
 		m_renderer.Present();
@@ -280,6 +350,9 @@ void cViewer::UpdateLookAt()
 
 void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui::GetCurrentContext())
+		m_gui.WndProcHandler(m_hWnd, message, wParam, lParam);
+
 	static bool maximizeWnd = false;
 	switch (message)
 	{
@@ -318,6 +391,13 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_KEYDOWN:
 		switch (wParam)
 		{
+		case 'C':
+		{
+			for (auto &wall : m_navi.m_walls)
+				wall.collision = false;
+		}
+		break;
+
 		case VK_TAB:
 		{
 			if (m_slowFactor < 1.f)
@@ -345,24 +425,86 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_LBUTTONDOWN:
 	{
 		cAutoCam cam(&m_camera);
-		POINT pos = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
+		const POINT pos = { (short)LOWORD(lParam), (short)HIWORD(lParam) };
 
 		SetCapture(m_hWnd);
 		m_LButtonDown = true;
-		m_curPos.x = LOWORD(lParam);
-		m_curPos.y = HIWORD(lParam);
+		m_curPos = sf::Vector2i(LOWORD(lParam), HIWORD(lParam));
+		m_clickPt = sf::Vector2i(LOWORD(lParam), HIWORD(lParam));
 
 		const Ray ray = GetMainCamera().GetRay(pos.x, pos.y);
 		Vector3 p1 = m_groundPlane1.Pick(ray.orig, ray.dir);
 		m_moveLen = common::clamp(1, 100, (p1 - ray.orig).Length());
 		graphic::GetMainCamera().MoveCancel();
+
+		if (!GetAsyncKeyState(VK_LCONTROL))
+			m_isDragRect = true;
 	}
 	break;
 
 	case WM_LBUTTONUP:
+	{
 		ReleaseCapture();
 		m_LButtonDown = false;
-		break;
+
+		if (m_isDragRect)
+		{
+			cAutoCam cam(&m_camera);
+			m_isDragRect = false;
+
+			// 영역안에 있는 유닛들을 선택한다.
+			const Vector2i lt(min(m_clickPt.x, m_curPos.x), min(m_clickPt.y, m_curPos.y));
+			const Vector2i rb(max(m_clickPt.x, m_curPos.x), max(m_clickPt.y, m_curPos.y));
+			if ((abs(lt.x - rb.x) == 0) || (abs(lt.y - rb.y) == 0))
+			{
+				// 범위가 0일경우, Picking으로 처리한다.
+				const Ray ray = GetMainCamera().GetRay(m_clickPt.x, m_clickPt.y);
+				m_select.clear();
+				for (auto &zealot : m_zealots)
+				{
+					zealot->m_isSelect = false;
+					cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
+					if (bsphere.Pick(ray))
+					{
+						zealot->m_isSelect = true;
+						m_select.push_back(zealot);
+					}
+				}
+			}
+			else
+			{
+				// 2D 사각형으로 frustum을 만들고, 그 안에 있는 유닛을 선택한다.
+				const Vector2i pos2d[4] = {
+					Vector2i(lt.x, lt.y), Vector2i(rb.x, lt.y)
+					, Vector2i(lt.x, rb.y), Vector2i(rb.x, rb.y)
+				};
+
+				Vector3 pos3d[8];
+				for (int i = 0; i < 4; ++i)
+				{
+					const Ray ray = GetMainCamera().GetRay(pos2d[i].x, pos2d[i].y);
+					pos3d[i] = ray.orig;
+					pos3d[i+4] = ray.orig + ray.dir * 1000.f;
+				}
+
+				cFrustum frustum;
+				frustum.SetFrustum(pos3d);
+
+				m_select.clear();
+				for (auto &zealot : m_zealots)
+				{
+					zealot->m_isSelect = false;
+					cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
+					if (frustum.IsIn(bsphere.GetPos()))
+					{
+						zealot->m_isSelect = true;
+						m_select.push_back(zealot);
+					}
+				}
+			}
+		}
+	}
+	break;
 
 	case WM_RBUTTONDOWN:
 	{
@@ -375,23 +517,26 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		m_curPos.x = pos.x;
 		m_curPos.y = pos.y;
 
-		if ((!GetAsyncKeyState(VK_LCONTROL)) && (m_state != PAUSE))
+		if (!GetAsyncKeyState(VK_LCONTROL))
 		{
+			// 유닛 이동
 			const Ray ray = GetMainCamera().GetRay(pos.x, pos.y);
 			Plane ground(Vector3(0, 1, 0), 0);
 			Vector3 dest = ground.Pick(ray.orig, ray.dir);
 			dest.y = 0.f;
 
-			if ((!GetAsyncKeyState(VK_LCONTROL)) && (m_state == RUN))
+			if (m_state == RUN)
 				m_group.m_brain->Move(dest);
 		}
 	}
 	break;
 
 	case WM_RBUTTONUP:
+	{
 		m_RButtonDown = false;
 		ReleaseCapture();
-		break;
+	}
+	break;
 
 	case WM_MBUTTONDOWN:
 		SetCapture(m_hWnd);
@@ -410,7 +555,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		cAutoCam cam(&m_camera);
 		sf::Vector2i pos = { (int)LOWORD(lParam), (int)HIWORD(lParam) };
 
-		if (m_LButtonDown)
+		if (m_LButtonDown && !m_isDragRect)
 		{
 			const int x = pos.x - m_curPos.x;
 			const int y = pos.y - m_curPos.y;
@@ -418,15 +563,23 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			if ((abs(x) > 1000) || (abs(y) > 1000))
 				break;
 
-			Vector3 dir = graphic::GetMainCamera().GetDirection();
-			Vector3 right = graphic::GetMainCamera().GetRight();
-			dir.y = 0;
-			dir.Normalize();
-			right.y = 0;
-			right.Normalize();
+			if (GetAsyncKeyState(VK_LCONTROL))
+			{
+				// 카메라 이동
+				Vector3 dir = graphic::GetMainCamera().GetDirection();
+				Vector3 right = graphic::GetMainCamera().GetRight();
+				dir.y = 0;
+				dir.Normalize();
+				right.y = 0;
+				right.Normalize();
 
-			graphic::GetMainCamera().MoveRight(-x * m_moveLen * 0.001f);
-			graphic::GetMainCamera().MoveFrontHorizontal(y * m_moveLen * 0.001f);
+				graphic::GetMainCamera().MoveRight(-x * m_moveLen * 0.001f);
+				graphic::GetMainCamera().MoveFrontHorizontal(y * m_moveLen * 0.001f);
+			}
+			else
+			{
+
+			}
 		}
 		else if (m_RButtonDown)
 		{

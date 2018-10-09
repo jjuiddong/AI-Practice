@@ -7,8 +7,7 @@ using namespace graphic;
 
 
 cZealot::cZealot()
-	: ai::iActorInterface<cZealot>(this)
-	, m_ai(NULL)
+	: m_ai(NULL)
 	, m_isLoaded(false)
 	, m_collisionWall(NULL)
 {
@@ -25,7 +24,7 @@ bool cZealot::Create(graphic::cRenderer &renderer)
 	RETV2(!__super::Create(renderer, common::GenerateId(), "zealot.fbx"), false);
 	SetAnimation("Stand");
 
-	m_ai = new cZealotAI(this);	
+	m_ai = new cZealotBrain(this);	
 	RETV2(!m_ai->Init(), false);
 
 	return true;
@@ -39,12 +38,6 @@ void cZealot::InitModel(cRenderer &renderer)
 	m_isLoaded = true;
 	*(Vector3*)&m_boundingBox.m_bbox.Extents *= 0.5f;
 	m_boundingSphere.SetRadius(m_boundingSphere.GetRadius()*0.5f);
-}
-
-
-void cZealot::aiSetAnimation(const Str64 &animationName)
-{
-	SetAnimation(animationName);
 }
 
 
@@ -66,7 +59,7 @@ bool cZealot::Update(cRenderer &renderer, const float deltaSeconds)
 }
 
 
-cNode* cZealot::aiCollision(const cBoundingSphere &srcBSphere
+cNode* cZealot::Collision(const cBoundingSphere &srcBSphere
 	, OUT cBoundingSphere &collisionSphrere)
 {
 	for (auto &zealot : ((cViewer*)g_application)->m_zealots)

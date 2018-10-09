@@ -1,0 +1,11 @@
+
+
+Coordinated Unit Movement
+	http://www.gamasutra.com/view/feature/131720/coordinated_unit_movement.php
+
+Implementing Coordinated Movement
+	http://www.gamasutra.com/view/feature/3314/coordinated_unit_movement.php?print=1
+
+Unity-Formation-Movement
+	괜찮은 링크 포함됨
+	https://github.com/Goodgulf281/Unity-Formation-Movement

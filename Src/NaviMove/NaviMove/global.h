@@ -14,17 +14,17 @@ public:
 
 
 	graphic::cNode* IsCollisionUnit(const graphic::cNode *node
-		, const graphic::cBoundingSphere &srcBSphere
-		, OUT graphic::cBoundingSphere &out);
+		, const cBoundingSphere &srcBSphere
+		, OUT cBoundingSphere &out);
 
-	bool IsCollisionWall( const graphic::cBoundingSphere &bsphere
-		, OUT graphic::cBoundingPlane &out);
+	bool IsCollisionWall( const cBoundingSphere &bsphere
+		, OUT cBoundingPlane &out);
 
 
 	struct sCollisionResult {
 		int type; // 0: no collision, 1:bsphere, 2:bplane, 3:bsphere+bplane
-		graphic::cBoundingSphere bsphere;
-		graphic::cBoundingPlane bplane;
+		cBoundingSphere bsphere;
+		cBoundingPlane bplane;
 		graphic::cNode *node;
 		float distance;
 	};

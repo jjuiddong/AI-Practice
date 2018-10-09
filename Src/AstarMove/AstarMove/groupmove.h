@@ -13,7 +13,7 @@ namespace ai
 		, public common::cMemoryPool<cGroupMove<T>>
 	{
 	public:
-		cGroupMove(ai::iActorInterface<T> *agent, const vector<Vector3> &path
+		cGroupMove(T *agent, const vector<Vector3> &path
 			, const Vector3 offset
 			, const float speed = 3.f)
 			: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::GROUP_MOVE)
@@ -34,7 +34,7 @@ namespace ai
 		virtual bool StartAction() override {
 			m_idx = 0;
 			NextMove(0);
-			m_agent->aiSetAnimation("Walk");
+			m_agent->SetAnimation("Walk");
 			return true;
 		}
 
@@ -43,11 +43,11 @@ namespace ai
 		{
 			if ((int)m_path.size() <= m_idx)
 			{
-				m_agent->aiSetAnimation("Stand");
+				m_agent->SetAnimation("Stand");
 				return false;
 			}
 
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_dest;
 
 			// 목적지에 가깝다면, 다음 노드로 이동
@@ -67,16 +67,16 @@ namespace ai
 
 				const float alpha = min(1, m_rotateTime / m_rotateInterval);
 				const Quaternion q = m_fromDir.Interpolate(m_toDir, alpha);
-				m_agent->aiGetTransform().rot = q;
+				m_agent->m_transform.rot = q;
 			}
 
 			// 캐릭터 이동.
 			Vector3 pos = curPos + m_dir * m_speed * deltaSeconds;
 
 			// 충돌 체크
-			graphic::cBoundingSphere bsphere = m_agent->m_ptr->m_boundingSphere * m_agent->aiGetTransform();
+			graphic::cBoundingSphere bsphere = m_agent->m_boundingSphere * m_agent->m_transform;
 			graphic::cBoundingSphere out;
-			graphic::cNode *collisionNode = m_agent->m_ptr->m_collisionWall;
+			graphic::cNode *collisionNode = m_agent->m_collisionWall;
 			if (collisionNode)
 			{
 				out = collisionNode->m_boundingSphere * collisionNode->GetWorldTransform();
@@ -87,10 +87,10 @@ namespace ai
 			}
 			else
 			{
-				collisionNode = m_agent->aiCollision(bsphere, out);
+				collisionNode = m_agent->Collision(bsphere, out);
 			}
 
-			//if (graphic::cNode *collisionNode = m_agent->aiCollision(bsphere, out))
+			//if (graphic::cNode *collisionNode = m_agent->Collision(bsphere, out))
 			if (collisionNode)
 			{
 				bool isMoveCollision = false;
@@ -149,7 +149,7 @@ namespace ai
 
 					Quaternion q;
 					q.SetRotationArc(Vector3(0, 0, -1), newDir);
-					m_fromDir = m_agent->aiGetTransform().rot;
+					m_fromDir = m_agent->m_transform.rot;
 					m_toDir = q;
 
 					m_rotateTime = 0;
@@ -173,7 +173,7 @@ namespace ai
 					{
 						Quaternion q;
 						q.SetRotationArc(Vector3(0, 0, -1), newDir);
-						m_fromDir = m_agent->aiGetTransform().rot;
+						m_fromDir = m_agent->m_transform.rot;
 						m_toDir = q;
 						m_rotateTime = 0;
 						//dbg::Log("dot = %f\n", dot);
@@ -184,9 +184,9 @@ namespace ai
 			}
 
 
-			m_agent->aiGetTransform().pos = pos;
-			m_agent->m_ptr->m_dir = m_dir;
-			m_agent->m_ptr->m_nextPos = m_dest;
+			m_agent->m_transform.pos = pos;
+			m_agent->m_dir = m_dir;
+			m_agent->m_nextPos = m_dest;
 
 			m_oldDistance = distance;
 			return true;
@@ -195,7 +195,7 @@ namespace ai
 		// NextMove
 		void NextMove(const int idx)
 		{
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_path[idx] + m_offset;
 
 			m_dir = dest - curPos;
@@ -205,7 +205,7 @@ namespace ai
 			Quaternion q;
 			q.SetRotationArc(Vector3(0, 0, -1), m_dir);
 
-			m_fromDir = m_agent->aiGetTransform().rot;
+			m_fromDir = m_agent->m_transform.rot;
 			m_toDir = q;
 			m_rotateTime = 0;
 			m_dest = dest;

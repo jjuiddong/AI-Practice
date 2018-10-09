@@ -13,8 +13,8 @@ namespace ai
 		, public common::cMemoryPool<cMove2<T>>
 	{
 	public:
-		cMove2(ai::iActorInterface<T> *agent, const Vector3 &dest, const float speed = 3.f)
-			: cAction<T>(agent, "move", "zealot_walk.ani", ACTION_TYPE::MOVE)
+		cMove2(T *agent, const Vector3 &dest, const float speed = 3.f)
+			: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::MOVE)
 			, m_rotateTime(0)
 			, m_speed(speed)
 			, m_rotateInterval(0.3f)
@@ -28,7 +28,7 @@ namespace ai
 
 
 		virtual bool StartAction() override {
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			if (!g_pathFinder.Find(curPos, m_dest, m_path))
 				return false;
 
@@ -36,7 +36,7 @@ namespace ai
 
 			m_idx = 0;
 			NextMove(0);
-			m_agent->aiSetAnimation("Walk");
+			m_agent->SetAnimation("Walk");
 			return true;
 		}
 
@@ -45,11 +45,11 @@ namespace ai
 		{
 			if ((int)m_path.size() <= m_idx)
 			{
-				m_agent->aiSetAnimation("Stand");
+				m_agent->SetAnimation("Stand");
 				return false;
 			}
 
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_path[m_idx];
 
 			// 목적지에 가깝다면, 다음 노드로 이동
@@ -69,11 +69,11 @@ namespace ai
 
 				const float alpha = min(1, m_rotateTime / m_rotateInterval);
 				const Quaternion q = m_fromDir.Interpolate(m_toDir, alpha);
-				m_agent->aiGetTransform().rot = q;
+				m_agent->m_transform.rot = q;
 			}
 
 			const Vector3 pos = curPos + m_dir * m_speed * deltaSeconds;
-			m_agent->aiGetTransform().pos = pos;
+			m_agent->m_transform.pos = pos;
 
 
 			//// 캐릭터 이동.
@@ -81,9 +81,9 @@ namespace ai
 
 			//// 충돌 체크
 			//{
-			//	graphic::cBoundingSphere bsphere = m_agent->m_ptr->m_boundingSphere * m_agent->aiGetTransform();
+			//	graphic::cBoundingSphere bsphere = m_agent->m_boundingSphere * m_agent->m_transform;
 			//	graphic::cBoundingSphere out;
-			//	if (m_agent->aiCollision(bsphere, out))
+			//	if (m_agent->Collision(bsphere, out))
 			//	{
 			//		Vector3 toPlayer = (pos - out.GetPos()).Normal();
 			//		Vector3 toDest = (m_dest - out.GetPos()).Normal();
@@ -103,7 +103,7 @@ namespace ai
 
 			//			Quaternion q;
 			//			q.SetRotationArc(Vector3(0, 0, -1), newDir);
-			//			m_fromDir = m_agent->aiGetTransform().rot;
+			//			m_fromDir = m_agent->m_transform.rot;
 			//			m_toDir = q;
 
 			//			m_rotateTime = 0;
@@ -127,7 +127,7 @@ namespace ai
 			//			{
 			//				Quaternion q;
 			//				q.SetRotationArc(Vector3(0, 0, -1), newDir);
-			//				m_fromDir = m_agent->aiGetTransform().rot;
+			//				m_fromDir = m_agent->m_transform.rot;
 			//				m_toDir = q;
 			//				m_rotateTime = 0;
 			//				//dbg::Log("dot = %f\n", dot);
@@ -138,21 +138,21 @@ namespace ai
 			//	}
 			//}
 
-			//m_agent->aiGetTransform().pos = pos;
+			//m_agent->m_transform.pos = pos;
 
 			//// 목적지에 가깝다면 종료.
 			//// 프레임이 낮을 때, 통과되는 문제가 있을 수 있다.
 			//const float distance = pos.LengthRoughly(m_dest);
 			//if (pos.LengthRoughly(m_dest) < 0.01f)
 			//{
-			//	m_agent->aiSetAnimation("Stand");
+			//	m_agent->SetAnimation("Stand");
 			//	return false; // 목적지 도착. 액션종료.
 			//}
 
 			//// 도착점 보다 멀리 왔다면, 멈춘다.
 			////if (m_oldDistance < distance)
 			////{
-			////	m_agent->aiSetAnimation("Stand");
+			////	m_agent->SetAnimation("Stand");
 			////	return false;
 			////}
 
@@ -162,7 +162,7 @@ namespace ai
 
 		void NextMove(const int idx)
 		{
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_path[idx];
 
 			m_dir = dest - curPos;
@@ -172,7 +172,7 @@ namespace ai
 			Quaternion q;
 			q.SetRotationArc(Vector3(0, 0, -1), m_dir);
 
-			m_fromDir = m_agent->aiGetTransform().rot;
+			m_fromDir = m_agent->m_transform.rot;
 			m_toDir = q;
 			m_rotateTime = 0;
 		}

@@ -13,8 +13,8 @@ namespace ai
 		, public common::cMemoryPool< cMove2<T> >
 	{
 	public:
-		cMove2(ai::iActorInterface<T> *agent, const Vector3 &dest, const float speed = 3.f)
-			: cAction<T>(agent, "move", "zealot_walk.ani", ACTION_TYPE::MOVE)
+		cMove2(T *agent, const Vector3 &dest, const float speed = 3.f)
+			: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::MOVE)
 			, m_rotateTime(0)
 			, m_speed(speed)
 			, m_rotateInterval(0.3f)
@@ -23,7 +23,7 @@ namespace ai
 			m_dest = dest;
 			m_rotateTime = 0;
 
-			const Vector3 curPos = agent->aiGetTransform().pos;
+			const Vector3 curPos = agent->m_transform.pos;
 			m_distance = curPos.LengthRoughly(m_dest);
 			m_oldDistance = curPos.LengthRoughly(m_dest);
 			m_dir = m_dest - curPos;
@@ -33,22 +33,23 @@ namespace ai
 			Quaternion q;
 			q.SetRotationArc(Vector3(0, 0, -1), m_dir);
 
-			m_fromDir = agent->aiGetTransform().rot;
+			m_fromDir = agent->m_transform.rot;
 			m_toDir = q;
 			m_rotateTime = 0;
 
-			m_agent->aiGetTransform().rot = q;
+			m_agent->m_transform.rot = q;
 		}
 
 
-		virtual void StartAction() override {
-			m_agent->aiSetAnimation("Walk");
+		virtual bool StartAction() override {
+			m_agent->SetAnimation("Walk");
+			return true;
 		}
 
 
 		virtual bool ActionExecute(const float deltaSeconds) override
 		{
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 
 			// 회전 보간 계산
 			if (m_rotateTime < m_rotateInterval)
@@ -57,26 +58,26 @@ namespace ai
 
 				const float alpha = min(1, m_rotateTime / m_rotateInterval);
 				const Quaternion q = m_fromDir.Interpolate(m_toDir, alpha);
-				m_agent->aiGetTransform().rot = q;
+				m_agent->m_transform.rot = q;
 			}
 
 			// 캐릭터 이동.
 			const Vector3 pos = curPos + m_dir * m_speed * deltaSeconds;
-			m_agent->aiGetTransform().pos = pos;
+			m_agent->m_transform.pos = pos;
 
 			// 목적지에 가깝다면 종료.
 			// 프레임이 낮을 때, 통과되는 문제가 있을 수 있다.
 			const float distance = pos.LengthRoughly(m_dest);
 			if (pos.LengthRoughly(m_dest) < 0.01f)
 			{
-				m_agent->aiSetAnimation("Stand");
+				m_agent->SetAnimation("Stand");
 				return false; // 목적지 도착. 액션종료.
 			}
 
 			// 도착점 보다 멀리 왔다면, 멈춘다.
 			if (m_oldDistance < distance)
 			{
-				m_agent->aiSetAnimation("Stand");
+				m_agent->SetAnimation("Stand");
 				return false;
 			}
 

@@ -6,10 +6,9 @@
 
 
 //----------------------------------------------------------------
-cGroup::cGroup() :
-	ai::iActorInterface<cGroup>(this)
+cGroup::cGroup()
 {
-	m_ai = new cZealotGroupAI(this);
+	m_ai = new cZealotGroupBrain(this);
 }
 
 cGroup::~cGroup() 
@@ -19,23 +18,23 @@ cGroup::~cGroup()
 
 
 //----------------------------------------------------------------
-cZealotGroupAI::cZealotGroupAI(ai::iActorInterface<cGroup> *agent)
-	: ai::cActor<cGroup>(agent)
+cZealotGroupBrain::cZealotGroupBrain(cGroup *agent)
+	: ai::cBrain<cGroup>(agent)
 {
 }
 
-cZealotGroupAI::~cZealotGroupAI()
+cZealotGroupBrain::~cZealotGroupBrain()
 {
 }
 
 
-void cZealotGroupAI::Move(const Vector3 &dest)
+void cZealotGroupBrain::Move(const Vector3 &dest)
 {
 	Vector3 center;
 	for (auto &p : m_children.m_Seq)
 	{
-		cActor<cZealot> *actor = dynamic_cast<cActor<cZealot>*>(p);
-		center += actor->m_agent->aiGetTransform().pos;
+		cBrain<cZealot> *actor = dynamic_cast<cBrain<cZealot>*>(p);
+		center += actor->m_agent->m_transform.pos;
 	}
 	center /= m_children.size();
 
@@ -50,8 +49,8 @@ void cZealotGroupAI::Move(const Vector3 &dest)
 
 	for (auto &p : m_children.m_Seq)
 	{
-		cActor<cZealot> *actor = dynamic_cast<cActor<cZealot>*>(p);
-		const Vector3 offset = actor->m_agent->aiGetTransform().pos - center;
+		cBrain<cZealot> *actor = dynamic_cast<cBrain<cZealot>*>(p);
+		const Vector3 offset = actor->m_agent->m_transform.pos - center;
 		actor->SetAction(new ai::cGroupMove<cZealot>(actor->m_agent, path, offset));
 	}
 

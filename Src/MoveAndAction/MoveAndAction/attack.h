@@ -13,29 +13,30 @@ namespace ai
 		, public common::cMemoryPool< cMove2<T> >
 	{
 	public:
-		cAttack(ai::iActorInterface<T> *agent, const Vector3 &target)
-			: cAction<T>(agent, "attack", "Attack", ACTION_TYPE::ATTACK)
+		cAttack(T *agent, const Vector3 &target)
+			: cAction<T>(agent, "attack", "Attack", eActionType::ATTACK)
 		{
 			m_target = target;
 
-			const Vector3 curPos = agent->aiGetTransform().pos;
+			const Vector3 curPos = agent->m_transform.pos;
 			Vector3 dir = target - curPos;
 			Quaternion q;
 			q.SetRotationArc(Vector3(0, 0, -1), dir);
-			agent->aiGetTransform().rot = q;
+			agent->m_transform.rot = q;
 		}
 
-		virtual void StartAction() override {
-			m_agent->m_ptr->m_aniIncT = 0.001f;
-			m_agent->aiSetAnimation("Attack");
+		virtual bool StartAction() override {
+			m_agent->m_aniIncT = 0.001f;
+			m_agent->SetAnimation("Attack");
+			return true;
 		}
 
 		virtual bool ActionExecute(const float deltaSeconds) override
 		{
 			// 애니메이션이 끝나면, 원래 상태로 복귀
-			if (m_agent->m_ptr->m_aniIncT < 0.001f)
+			if (m_agent->m_aniIncT < 0.001f)
 			{
-				m_agent->aiSetAnimation("Stand");
+				m_agent->SetAnimation("Stand");
 				return false;
 			}
 

@@ -7,8 +7,7 @@ using namespace graphic;
 
 
 cZealot::cZealot()
-	: ai::iActorInterface<cZealot>(this)
-	, m_ai(NULL)
+	: m_ai(NULL)
 {
 }
 
@@ -20,18 +19,12 @@ cZealot::~cZealot()
 
 bool cZealot::Create(graphic::cRenderer &renderer)
 {
-	RETV2(!__super::Create(renderer, common::GenerateId(), "zealot2.fbx"), false);
+	RETV2(!__super::Create(renderer, common::GenerateId(), "zealot.fbx"), false);
 
-	m_ai = new cZealotAI(this);	
+	m_ai = new cZealotBrain(this);	
 	RETV2(!m_ai->Init(), false);
 
 	return true;
-}
-
-
-void cZealot::aiSetAnimation(const Str64 &animationName)
-{
-	SetAnimation(animationName);
 }
 
 

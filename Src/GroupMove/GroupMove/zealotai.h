@@ -7,10 +7,10 @@
 #include "zealot.h"
 
 
-class cZealotAI : public ai::cActor<cZealot>
+class cZealotBrain : public ai::cBrain<cZealot>
 {
 public:
-	cZealotAI(ai::iActorInterface<cZealot> *agent);
-	virtual ~cZealotAI();
+	cZealotBrain(cZealot *agent);
+	virtual ~cZealotBrain();
 
 };

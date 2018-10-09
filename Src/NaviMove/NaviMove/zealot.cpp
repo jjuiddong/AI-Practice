@@ -9,7 +9,9 @@ using namespace graphic;
 cZealot::cZealot()
 	: m_brain(NULL)
 	, m_isLoaded(false)
+	, m_isSelect(false)
 	, m_collisionWall(NULL)
+	, m_isCollisionTurn(false)
 {
 }
 
@@ -50,7 +52,7 @@ bool cZealot::Render(cRenderer &renderer
 
 	if (1)
 	{
-		// NextPos Render
+		// Render NextPos
 		{
 			Transform tfm = m_transform;
 			tfm.pos = m_nextPos;
@@ -60,10 +62,32 @@ bool cZealot::Render(cRenderer &renderer
 			renderer.m_dbgBox.Render(renderer);
 		}
 
+		// Render Path
+		renderer.m_dbgLine.SetColor(cColor::BLUE);
+		for (int i = 0; i < (int)m_route.size() - 1; ++i)
+		{
+			renderer.m_dbgLine.SetLine(m_route[i], m_route[i + 1], 0.005f);
+			renderer.m_dbgLine.Render(renderer);
+		}
+
+		// Render Directios
+		if (m_isCollisionTurn)
+		{
+			for (auto &info : m_dirs)
+			{
+				renderer.m_dbgLine.SetColor(info.use? cColor::RED : cColor::WHITE);
+				renderer.m_dbgLine.SetLine(m_transform.pos
+					, m_transform.pos + info.dir * ((info.len >= FLT_MAX)? 10.f : info.len), 0.005f);
+				renderer.m_dbgLine.Render(renderer);
+			}
+		}
+
 		Transform tfm = m_transform;
 		tfm.scale = Vector3(1, 1, 1) * 0.1f;
 		renderer.m_textMgr.AddTextRender(renderer, m_id, m_name.wstr().c_str()
-			, cColor::WHITE, cColor::BLACK, BILLBOARD_TYPE::ALL_AXIS
+			, m_isSelect? cColor(0.8f,0.8f,0) : cColor::WHITE
+			, cColor::BLACK
+			, BILLBOARD_TYPE::ALL_AXIS
 			, tfm, true);
 	}
 

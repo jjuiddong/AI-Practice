@@ -358,8 +358,8 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			m_dest.y = 1.f;
 			m_path.clear();
 			m_curIdx = 0;
-			vector<Vector3> out1;
-			m_navi.Find(m_sphere.m_transform.pos, m_dest, out1, m_path);
+			vector<int> out1;
+			m_navi.Find(m_sphere.m_transform.pos, m_dest, m_path, out1);
 			NextMove(0);
 
 			m_lineList.ClearLines();
