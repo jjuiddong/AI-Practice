@@ -22,7 +22,7 @@ namespace ai
 
 		bool CollisionAction(const Vector3 &curPos, const Vector3 &nextPos
 			, const graphic::cBoundingSphere &srcBSphere
-			, const cGlobal::sCollisionResult &result
+			, const sCollisionResult &result
 			, const float deltaSeconds
 			, OUT Vector3 &out
 		);
@@ -31,6 +31,8 @@ namespace ai
 
 
 	public:
+		using cAction<T>::m_agent; // base template class member access
+
 		float m_incT;
 		Vector3 m_offset;
 		Vector3 m_dest;
@@ -133,7 +135,7 @@ namespace ai
 		Vector3 nextPos = curPos + m_dir * m_speed * dt;
 
 		// Collision Test
-		cGlobal::sCollisionResult colResult;
+		sCollisionResult colResult;
 		graphic::cBoundingSphere bsphere = m_agent->m_boundingSphere * m_agent->m_transform;
 		if (g_global.IsCollision(m_agent, bsphere, colResult))
 		{
@@ -186,7 +188,7 @@ namespace ai
 	template<class T>
 	bool cGroupMove<T>::CollisionAction(const Vector3 &curPos, const Vector3 &nextPos
 		, const graphic::cBoundingSphere &srcBSphere
-		, const cGlobal::sCollisionResult &result
+		, const sCollisionResult &result
 		, const float deltaSeconds
 		, OUT Vector3 &out
 	)
@@ -282,7 +284,7 @@ namespace ai
 			// 8 방향으로 충돌 체크한다.
 			const Ray ray(pos + Vector3(0, srcBSphere.GetPos().y, 0), dirs[i]);
 			float len = FLT_MAX;
-			cGlobal::sCollisionResult colResult;
+			sCollisionResult colResult;
 			const int cResult = g_global.IsCollisionByRay(ray, m_agent
 				, srcBSphere.GetRadius(), colResult);
 			const bool isBlock = (colResult.distance < (srcBSphere.GetRadius() * 1.3f));

@@ -39,6 +39,7 @@ namespace ai
 
 
 	public:
+		using cAction<T>::m_agent;
 		int m_patrolPos; // 0:m_dest1, 1:m_dest2
 		Vector3 m_dest1;
 		Vector3 m_dest2;

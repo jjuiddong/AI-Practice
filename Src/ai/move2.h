@@ -29,7 +29,7 @@ namespace ai
 
 
 		virtual bool StartAction() override {
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			if (!g_pathFinder.Find(curPos, m_dest, m_path))
 				return false;
 
@@ -51,7 +51,7 @@ namespace ai
 				return false;
 			}
 
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_path[m_idx];
 
 			// 목적지에 가깝다면, 다음 노드로 이동
@@ -71,14 +71,14 @@ namespace ai
 
 				const float alpha = min(1, m_rotateTime / m_rotateInterval);
 				const Quaternion q = m_fromDir.Interpolate(m_toDir, alpha);
-				m_agent->aiGetTransform().rot = q;
+				m_agent->m_transform.rot = q;
 			}
 
 			// 캐릭터 이동.
 			Vector3 pos = curPos + m_dir * m_speed * deltaSeconds;
 
 			// 충돌 체크
-			graphic::cBoundingSphere bsphere = m_agent->m_ptr->m_boundingSphere * m_agent->aiGetTransform();
+			graphic::cBoundingSphere bsphere = m_agent->m_ptr->m_boundingSphere * m_agent->m_transform;
 			graphic::cBoundingSphere out;
 			if (graphic::cNode *collisionNode = m_agent->aiCollision(bsphere, out))
 			{
@@ -88,7 +88,7 @@ namespace ai
 				{
 					if (zealot->m_ai->IsCurrentAction(eActionType::MOVE))
 					{
-						if (cMove2 *movAction = dynamic_cast<cMove2*>(zealot->m_ai->GetAction()))
+						if (cMove2 *movAction = dynamic_cast<cMove2*>(zealot->m_brain->GetAction()))
 						{
 							isMoveCollision = true;
 							opponentDir = movAction->m_dir;
@@ -133,7 +133,7 @@ namespace ai
 
 					Quaternion q;
 					q.SetRotationArc(Vector3(0, 0, -1), newDir);
-					m_fromDir = m_agent->aiGetTransform().rot;
+					m_fromDir = m_agent->m_transform.rot;
 					m_toDir = q;
 
 					m_rotateTime = 0;
@@ -157,7 +157,7 @@ namespace ai
 					{
 						Quaternion q;
 						q.SetRotationArc(Vector3(0, 0, -1), newDir);
-						m_fromDir = m_agent->aiGetTransform().rot;
+						m_fromDir = m_agent->m_transform.rot;
 						m_toDir = q;
 						m_rotateTime = 0;
 						//dbg::Log("dot = %f\n", dot);
@@ -168,7 +168,7 @@ namespace ai
 			}
 
 
-			m_agent->aiGetTransform().pos = pos;
+			m_agent->m_transform.pos = pos;
 			m_agent->m_ptr->m_dir = m_dir;
 			m_agent->m_ptr->m_nextPos = m_dest;
 
@@ -178,7 +178,7 @@ namespace ai
 
 		void NextMove(const int idx)
 		{
-			const Vector3 curPos = m_agent->aiGetTransform().pos;
+			const Vector3 curPos = m_agent->m_transform.pos;
 			const Vector3 dest = m_path[idx];
 
 			m_dir = dest - curPos;
@@ -188,7 +188,7 @@ namespace ai
 			Quaternion q;
 			q.SetRotationArc(Vector3(0, 0, -1), m_dir);
 
-			m_fromDir = m_agent->aiGetTransform().rot;
+			m_fromDir = m_agent->m_transform.rot;
 			m_toDir = q;
 			m_rotateTime = 0;
 			m_dest = dest;
@@ -196,6 +196,7 @@ namespace ai
 
 
 	public:
+		using cAction<T>::m_agent;
 		Vector3 m_dest;
 		float m_speed; // 3.f
 		float m_rotateInterval; // 회전 보간 시간, 0.3초
