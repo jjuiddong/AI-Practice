@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "navimove.h"
+#include "formationclose.h"
 
 using namespace graphic;
 
@@ -10,7 +10,7 @@ cViewer::cViewer()
 	, m_camera("main camera")
 	, m_isDragRect(false)
 {
-	m_windowName = L"Navigation Mesh Move";
+	m_windowName = L"Formation Close";
 	const RECT r = { 0, 0, 1024, 768 };
 	//const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
@@ -87,7 +87,7 @@ bool cViewer::OnInit()
 		cZealot *zealot = new cZealot();
 		zealot->Create(m_renderer);
 		zealot->m_name.Format("Zealot%d", i);
-		zealot->m_transform.pos = Vector3(0.6f*(i%5) -2.f, 0, 0.6f*(i/5));
+		zealot->m_transform.pos = Vector3(0.6f*(i % 5) - 2.f, 0, 0.6f*(i / 5));
 		m_terrain.AddModel(zealot);
 		g_global.m_zealots.push_back(zealot);
 	}
@@ -140,7 +140,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		{
 			m_renderer.m_dbgBox.SetColor(cColor::WHITE);
 
-			for (u_int i=0; i < g_global.m_navi.m_vertices.size(); ++i)
+			for (u_int i = 0; i < g_global.m_navi.m_vertices.size(); ++i)
 			{
 				auto &vtx = g_global.m_navi.m_vertices[i];
 
@@ -167,7 +167,7 @@ void cViewer::OnRender(const float deltaSeconds)
 			}
 
 			// Render Node Number
-			for (u_int i=0; i < g_global.m_navi.m_naviNodes.size(); ++i)
+			for (u_int i = 0; i < g_global.m_navi.m_naviNodes.size(); ++i)
 			{
 				auto &node = g_global.m_navi.m_naviNodes[i];
 				const Vector3 center = node.center;
@@ -240,10 +240,10 @@ void cViewer::OnRender(const float deltaSeconds)
 		// GUI
 		{
 			bool isOpen = true;
-			ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize 
+			ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
 				| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
-			ImGui::SetNextWindowPos(ImVec2(0,0));
-			ImGui::SetNextWindowSize(ImVec2(500,100));
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSize(ImVec2(500, 100));
 			ImGui::SetNextWindowBgAlpha(0.f);
 			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
 			ImGui::Begin("info", &isOpen, flags);
@@ -382,7 +382,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		if ((zDelta > 0) && GetMainCamera().GetEyePos().y < 1.f)
 			break;
 
-		graphic::GetMainCamera().Zoom(ray.dir, (zDelta<0) ? -zoomLen : zoomLen);
+		graphic::GetMainCamera().Zoom(ray.dir, (zDelta < 0) ? -zoomLen : zoomLen);
 	}
 	break;
 
@@ -482,7 +482,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					const Ray ray = GetMainCamera().GetRay(pos2d[i].x, pos2d[i].y);
 					pos3d[i] = ray.orig;
-					pos3d[i+4] = ray.orig + ray.dir * 1000.f;
+					pos3d[i + 4] = ray.orig + ray.dir * 1000.f;
 				}
 
 				cFrustum frustum;

@@ -10,7 +10,7 @@ namespace ai
 
 	template<class T>
 	class cAttack : public cAction<T>
-		, public common::cMemoryPool< cMove2<T> >
+		, public common::cMemoryPool< cAttack<T> >
 	{
 	public:
 		cAttack(T *agent, const Vector3 &target)
@@ -44,6 +44,7 @@ namespace ai
 
 
 	public:
+		using cAction<T>::m_agent;
 		Vector3 m_target;
 	};
 

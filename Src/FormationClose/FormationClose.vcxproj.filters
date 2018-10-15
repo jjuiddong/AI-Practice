@@ -1,55 +1,55 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="navimove.cpp" />
+    <ClCompile Include="formationclose.cpp" />
     <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="..\..\ai\zealot.cpp">
+    <ClCompile Include="..\ai\zealot.cpp">
       <Filter>ai</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ai\zealotbrain.cpp">
+    <ClCompile Include="..\ai\zealotbrain.cpp">
       <Filter>ai</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ai\zealotgroup.cpp">
+    <ClCompile Include="..\ai\zealotgroup.cpp">
       <Filter>ai</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ai\aiglobal.cpp">
+    <ClCompile Include="..\ai\aiglobal.cpp">
       <Filter>ai</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="navimove.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="..\..\ai\attack.h">
+    <ClInclude Include="formationclose.h" />
+    <ClInclude Include="..\ai\groupmove.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\groupmove.h">
+    <ClInclude Include="..\ai\zealot.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\move2.h">
+    <ClInclude Include="..\ai\zealotbrain.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\patrol.h">
+    <ClInclude Include="..\ai\zealotgroup.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\zealot.h">
+    <ClInclude Include="..\ai\define.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\zealotbrain.h">
+    <ClInclude Include="..\ai\aiglobal.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\zealotgroup.h">
+    <ClInclude Include="..\ai\attack.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\aiglobal.h">
+    <ClInclude Include="..\ai\move2.h">
       <Filter>ai</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ai\define.h">
+    <ClInclude Include="..\ai\patrol.h">
       <Filter>ai</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ai">
-      <UniqueIdentifier>{c8be28fa-2fe4-488b-80cb-2ca666f2285b}</UniqueIdentifier>
+      <UniqueIdentifier>{907171d8-faee-4b91-b5dc-522eda4cd952}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

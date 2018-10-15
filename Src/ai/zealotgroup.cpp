@@ -1,8 +1,6 @@
 
 #include "stdafx.h"
 #include "zealotgroup.h"
-#include "move2.h"
-#include "groupmove.h"
 
 using namespace graphic;
 
@@ -39,7 +37,7 @@ void cZealotGroupBrain::Move(const Vector3 &dest)
 	}
 	center /= m_children.size();
 
-	ai::cNavigationMesh &navi = ((cViewer*)g_application)->m_navi;
+	ai::cNavigationMesh &navi = g_global.m_navi;
 
 	//vector<Vector3> path;
 	//vector<int> nodePath;

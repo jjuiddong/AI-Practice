@@ -8,11 +8,13 @@ using namespace common;
 
 extern framework::cGameMain* g_application;
 
-#include "zealotgroup.h"
-#include "zealot.h"
-#include "zealotbrain.h"
+#include "../../ai/define.h"
+#include "../../ai/zealotgroup.h"
+#include "../../ai/zealot.h"
+#include "../../ai/zealotbrain.h"
+#include "../../ai/aiglobal.h"
+#include "../../ai/groupmove.h"
 #include "navimove.h"
-#include "global.h"
 
 
 extern ai::cPathFinder g_pathFinder;

@@ -1,19 +1,19 @@
 
 #include "stdafx.h"
-#include "global.h"
+#include "aiglobal.h"
 #include "zealot.h"
 
-cGlobal g_global; // global variable
+ai::cAiGlobal g_global; // global variable
 
 using namespace graphic;
+using namespace ai;
 
 
-cGlobal::cGlobal()
-	: m_main(NULL)
+cAiGlobal::cAiGlobal()
 {
 }
 
-cGlobal::~cGlobal()
+cAiGlobal::~cAiGlobal()
 {
 }
 
@@ -21,12 +21,12 @@ cGlobal::~cGlobal()
 // node : 충돌 체크할 유닛 Node
 // srcBSphere : 충돌 체크할 agent bounding Sphere
 // out : 충돌 된 유닛으 Bounding Sphere를 리턴한다.
-cNode* cGlobal::IsCollisionUnit(
+cNode* cAiGlobal::IsCollisionUnit(
 	const cNode *node
 	, const cBoundingSphere &srcBSphere
 	, OUT cBoundingSphere &out)
 {
-	const vector<cZealot*> &zealots = m_main->m_zealots;
+	const vector<cZealot*> &zealots = m_zealots;
 
 	for (auto &zealot : zealots)
 	{
@@ -47,7 +47,7 @@ cNode* cGlobal::IsCollisionUnit(
 }
 
 
-bool cGlobal::IsCollisionWall(
+bool cAiGlobal::IsCollisionWall(
 	const cBoundingSphere &bsphere
 	, OUT cBoundingPlane &out)
 {
@@ -59,23 +59,23 @@ bool cGlobal::IsCollisionWall(
 	float mostNearLen2 = FLT_MAX;
 
 	set<int> nodeIndices;
-	m_main->m_navi.GetNodesFromPosition(bsphere.GetPos(), nodeIndices);
+	m_navi.GetNodesFromPosition(bsphere.GetPos(), nodeIndices);
 	for (auto &nodeIdx : nodeIndices)
 	{
-		auto it = m_main->m_navi.m_wallMap.find(nodeIdx);
-		if (m_main->m_navi.m_wallMap.end() == it)
+		auto it = m_navi.m_wallMap.find(nodeIdx);
+		if (m_navi.m_wallMap.end() == it)
 			continue;
 
 		const auto &wallIndices = it->second;
 		for (u_int i = 0; i < wallIndices.size(); ++i)
 		{
-			const auto &bplane = m_main->m_navi.m_walls[wallIndices[i]].bplane;
+			const auto &bplane = m_navi.m_walls[wallIndices[i]].bplane;
 			float distance = FLT_MAX;
 			Vector3 pos;
 			if (bplane.Collision(bsphere, &pos, &distance))
 			{
 				// for collision debugging
-				m_main->m_navi.m_walls[wallIndices[i]].collision = true;
+				m_navi.m_walls[wallIndices[i]].collision = true;
 
 				if (mostNearLen1 > distance)
 				{
@@ -148,7 +148,7 @@ bool cGlobal::IsCollisionWall(
 
 // wall, unit 충돌체크 후, 결과정보를 리턴한다.
 // return type : 충돌 시 true
-bool cGlobal::IsCollision(const cNode *srcNode
+bool cAiGlobal::IsCollision(const cNode *srcNode
 	, const cBoundingSphere &srcBSphere
 	, OUT sCollisionResult &out)
 {
@@ -190,7 +190,7 @@ bool cGlobal::IsCollision(const cNode *srcNode
 // return 0: no collision
 //		  1: collision unit
 //		  2: collision plane
-int cGlobal::IsCollisionByRay(const Ray &ray
+int cAiGlobal::IsCollisionByRay(const Ray &ray
 	, const cNode *srcNode
 	, const float radius
 	, OUT sCollisionResult &out
@@ -199,7 +199,7 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	// Check Unit
 	int mostNearIdx1 = -1;
 	float mostNearLen1 = FLT_MAX;
-	const vector<cZealot*> &zealots = m_main->m_zealots;
+	const vector<cZealot*> &zealots = m_zealots;
 	for (u_int i=0; i < zealots.size(); ++i)
 	{
 		auto &zealot = zealots[i];
@@ -220,20 +220,20 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 
 	// Check Wall
 	set<int> nodeIndices;
-	m_main->m_navi.GetNodesFromPosition(ray.orig, nodeIndices);
+	m_navi.GetNodesFromPosition(ray.orig, nodeIndices);
 
 	int mostNearIdx2 = -1;
 	float mostNearLen2 = FLT_MAX;
 	for (auto &nodeIdx : nodeIndices)
 	{
-		auto it = m_main->m_navi.m_wallMap.find(nodeIdx);
-		if (m_main->m_navi.m_wallMap.end() == it)
+		auto it = m_navi.m_wallMap.find(nodeIdx);
+		if (m_navi.m_wallMap.end() == it)
 			continue;
 
 		const auto &wallIndices = it->second;
 		for (u_int i=0; i < wallIndices.size(); ++i)
 		{
-			const auto &bplane = m_main->m_navi.m_walls[wallIndices[i]].bplane;// wallPlanes[i];
+			const auto &bplane = m_navi.m_walls[wallIndices[i]].bplane;// wallPlanes[i];
 			float distance = FLT_MAX;
 			if (bplane.Intersect(ray, radius, &distance))
 			{
@@ -269,7 +269,7 @@ int cGlobal::IsCollisionByRay(const Ray &ray
 	else if (2 == type)
 	{
 		out.type = 2;
-		out.bplane = m_main->m_navi.m_walls[mostNearIdx2].bplane;
+		out.bplane = m_navi.m_walls[mostNearIdx2].bplane;
 		out.distance = mostNearLen2;
 	}
 	else

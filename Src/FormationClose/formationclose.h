@@ -1,5 +1,6 @@
 //
-// Navigation Mesh Move
+// 2018-10-14, jjuiddong
+// Formation Close Move
 //
 #pragma once
 
@@ -32,17 +33,12 @@ public:
 	graphic::cTerrain m_terrain;
 	vector<graphic::cNode*> m_walls;
 	graphic::cCascadedShadowMap m_ccsm;
-	//ai::cNavigationMesh m_navi;
 	graphic::cDbgAxis m_dbgAxis;
-	//graphic::cDbgLineList m_pathLineList;
 	graphic::cDbgLineList m_nodeLineList;
 	graphic::cTextManager m_nodeTextMgr;
 	graphic::cRect2D m_rect2D;
 	graphic::cDbgFrustum m_dbgFrustum;
 
-	//enum { MAX_PLAYER = 5 };
-	//vector<cZealot*> m_zealots;
-	//vector<cZealot*> m_select; // reference
 	cGroup m_group;
 	bool m_isWireframe;
 
