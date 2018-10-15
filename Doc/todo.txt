@@ -1,0 +1,17 @@
+
+
+- group move
+
+	- 2 unit move
+		- row 
+		- column
+
+	- 2 unit partial move
+		- divide
+		- collapse
+
+	- 3 unit move
+		- divide
+		- collapse
+
+
