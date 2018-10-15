@@ -98,6 +98,5 @@ bool cZealot::Render(cRenderer &renderer
 bool cZealot::Update(cRenderer &renderer, const float deltaSeconds)
 {
 	__super::Update(renderer, deltaSeconds);
-	m_brain->Update(deltaSeconds);
 	return true;
 }

@@ -74,7 +74,7 @@ bool cViewer::OnInit()
 
 	m_ccsm.Create(m_renderer);
 
-	if (!g_global.m_navi.ReadFromPathFile("../media2/wallnavi4.txt"))
+	if (!g_ai.m_navi.ReadFromPathFile("../media2/wallnavi4.txt"))
 	{
 		::MessageBoxA(m_hWnd, "Error Read Navigation Mesh file", "Error", MB_OK);
 		return false;
@@ -89,14 +89,14 @@ bool cViewer::OnInit()
 		zealot->m_name.Format("Zealot%d", i);
 		zealot->m_transform.pos = Vector3(0.6f*(i % 5) - 2.f, 0, 0.6f*(i / 5));
 		m_terrain.AddModel(zealot);
-		g_global.m_zealots.push_back(zealot);
+		g_ai.m_zealots.push_back(zealot);
 	}
 
-	for (auto &p : g_global.m_zealots)
-		m_group.m_brain->AddActor(p->m_brain);
+	for (auto &p : g_ai.m_zealots)
+		m_group.m_brain->AddBrain(p->m_brain);
 
 	m_nodeLineList.Create(m_renderer, 128);
-	MakeLineList(m_renderer, g_global.m_navi, m_nodeLineList);
+	MakeLineList(m_renderer, g_ai.m_navi, m_nodeLineList);
 
 	m_nodeTextMgr.Create(1024, 512);
 
@@ -108,6 +108,7 @@ void cViewer::OnUpdate(const float deltaSeconds)
 {
 	GetMainCamera().Update(deltaSeconds);
 	m_terrain.Update(m_renderer, deltaSeconds);
+	m_group.m_brain->Update(deltaSeconds);
 }
 
 
@@ -140,9 +141,9 @@ void cViewer::OnRender(const float deltaSeconds)
 		{
 			m_renderer.m_dbgBox.SetColor(cColor::WHITE);
 
-			for (u_int i = 0; i < g_global.m_navi.m_vertices.size(); ++i)
+			for (u_int i = 0; i < g_ai.m_navi.m_vertices.size(); ++i)
 			{
-				auto &vtx = g_global.m_navi.m_vertices[i];
+				auto &vtx = g_ai.m_navi.m_vertices[i];
 
 				// Render Vertex Position
 				{
@@ -167,9 +168,9 @@ void cViewer::OnRender(const float deltaSeconds)
 			}
 
 			// Render Node Number
-			for (u_int i = 0; i < g_global.m_navi.m_naviNodes.size(); ++i)
+			for (u_int i = 0; i < g_ai.m_navi.m_naviNodes.size(); ++i)
 			{
-				auto &node = g_global.m_navi.m_naviNodes[i];
+				auto &node = g_ai.m_navi.m_naviNodes[i];
 				const Vector3 center = node.center;
 
 				Transform tfm;
@@ -198,7 +199,7 @@ void cViewer::OnRender(const float deltaSeconds)
 			}
 
 			// Render Collision Wall
-			for (auto &wall : g_global.m_navi.m_walls)
+			for (auto &wall : g_ai.m_navi.m_walls)
 			{
 				if (wall.collision)
 				{
@@ -255,7 +256,7 @@ void cViewer::OnRender(const float deltaSeconds)
 			ImGui::Checkbox("Wireframe", &m_isWireframe);
 			if (ImGui::Button("Clear Wall Plane (C)"))
 			{
-				for (auto &wall : g_global.m_navi.m_walls)
+				for (auto &wall : g_ai.m_navi.m_walls)
 					wall.collision = false;
 			}
 
@@ -391,7 +392,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case 'C':
 		{
-			for (auto &wall : g_global.m_navi.m_walls)
+			for (auto &wall : g_ai.m_navi.m_walls)
 				wall.collision = false;
 		}
 		break;
@@ -457,15 +458,15 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				// 범위가 0일경우, Picking으로 처리한다.
 				const Ray ray = GetMainCamera().GetRay(m_clickPt.x, m_clickPt.y);
-				g_global.m_select.clear();
-				for (auto &zealot : g_global.m_zealots)
+				g_ai.m_select.clear();
+				for (auto &zealot : g_ai.m_zealots)
 				{
 					zealot->m_isSelect = false;
 					cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
 					if (bsphere.Pick(ray))
 					{
 						zealot->m_isSelect = true;
-						g_global.m_select.push_back(zealot);
+						g_ai.m_select.push_back(zealot);
 					}
 				}
 			}
@@ -488,15 +489,15 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 				cFrustum frustum;
 				frustum.SetFrustum(pos3d);
 
-				g_global.m_select.clear();
-				for (auto &zealot : g_global.m_zealots)
+				g_ai.m_select.clear();
+				for (auto &zealot : g_ai.m_zealots)
 				{
 					zealot->m_isSelect = false;
 					cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
 					if (frustum.IsIn(bsphere.GetPos()))
 					{
 						zealot->m_isSelect = true;
-						g_global.m_select.push_back(zealot);
+						g_ai.m_select.push_back(zealot);
 					}
 				}
 			}
@@ -524,7 +525,7 @@ void cViewer::OnMessageProc(UINT message, WPARAM wParam, LPARAM lParam)
 			dest.y = 0.f;
 
 			if (m_state == RUN)
-				m_group.m_brain->Move(dest);
+				m_group.m_brain->FormationMove(dest);
 		}
 	}
 	break;

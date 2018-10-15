@@ -15,13 +15,13 @@
     <ClCompile Include="..\ai\aiglobal.cpp">
       <Filter>ai</Filter>
     </ClCompile>
+    <ClCompile Include="..\ai\formation.cpp">
+      <Filter>ai</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="formationclose.h" />
-    <ClInclude Include="..\ai\groupmove.h">
-      <Filter>ai</Filter>
-    </ClInclude>
     <ClInclude Include="..\ai\zealot.h">
       <Filter>ai</Filter>
     </ClInclude>
@@ -44,6 +44,21 @@
       <Filter>ai</Filter>
     </ClInclude>
     <ClInclude Include="..\ai\patrol.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\formationmove.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\formation.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\unitmove.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\unitmove2.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\groupmove.h">
       <Filter>ai</Filter>
     </ClInclude>
   </ItemGroup>

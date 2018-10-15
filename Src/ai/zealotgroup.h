@@ -28,4 +28,6 @@ public:
 	virtual ~cZealotGroupBrain();
 
 	void Move(const Vector3 &dest);
+	void FormationMove(const Vector3 &dest);
 };
+

@@ -3,7 +3,7 @@
 #include "aiglobal.h"
 #include "zealot.h"
 
-ai::cAiGlobal g_global; // global variable
+ai::cAiGlobal g_ai; // global variable
 
 using namespace graphic;
 using namespace ai;

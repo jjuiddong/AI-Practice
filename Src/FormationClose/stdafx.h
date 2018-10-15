@@ -14,7 +14,8 @@ extern framework::cGameMain* g_application;
 #include "../ai/zealotgroup.h"
 #include "../ai/zealotbrain.h"
 #include "../ai/aiglobal.h"
-#include "../ai/groupmove.h"
+#include "../ai/unitmove.h"
+#include "../ai/unitmove2.h"
 #include "formationclose.h"
 
 

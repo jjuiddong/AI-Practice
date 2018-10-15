@@ -1,6 +1,6 @@
 //
+// 2018-10-15, jjuiddong
 // Global Variable & Function
-//
 //
 #pragma once
 
@@ -39,5 +39,4 @@ namespace ai
 
 }
 
-extern ai::cAiGlobal g_global;
-
+extern ai::cAiGlobal g_ai;
