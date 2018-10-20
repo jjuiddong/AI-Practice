@@ -1,6 +1,9 @@
 //
 // 2017-11-19, jjuiddong
-// 그룹 이동
+// Unit Group Move
+// First Version Unit Move
+//	- collision check, wall, unit
+//	- move destination
 //
 #pragma once
 
@@ -59,7 +62,7 @@ namespace ai
 		, const Vector3 offset
 		, const float speed // =3.f
 	)
-		: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::GROUP_MOVE)
+		: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::MOVE)
 		, m_incT(0)
 		, m_offset(offset)
 		, m_rotateTime(0)

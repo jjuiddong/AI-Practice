@@ -1,6 +1,7 @@
 //
-// 2017-11-19, jjuiddong
-// 그룹 이동
+// 2018-10-20, jjuiddong
+// Unit Group Move Action
+//	- upgrade cUnitMove
 //
 #pragma once
 
@@ -14,7 +15,7 @@ namespace ai
 	{
 	public:
 		cUnitMove2(T *agent, const vector<Vector3> &path
-			, const Vector3 &offset
+			, const Vector3 &offset = Vector3::Zeroes
 			, const float speed = 3.f);
 
 		virtual bool StartAction() override;
@@ -55,10 +56,10 @@ namespace ai
 
 	template<class T>
 	cUnitMove2<T>::cUnitMove2(T *agent, const vector<Vector3> &path
-		, const Vector3 &offset
+		, const Vector3 &offset // = Vector3::Zeroes
 		, const float speed // =3.f
 	)
-		: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::GROUP_MOVE)
+		: cAction<T>(agent, "move", "zealot_walk.ani", eActionType::MOVE)
 		, m_incT(0)
 		, m_offset(offset)
 		, m_rotateTime(0)
@@ -114,11 +115,11 @@ namespace ai
 		const float distance = Vector3(curPos.x,0, curPos.z).LengthRoughly(
 			Vector3(m_dest.x, 0, m_dest.z));
 		//if (distance < 0.1f)
-		if (distance <= m_agent->m_boundingSphere.GetRadius()*0.5f)
+		if (distance <= m_agent->m_boundingSphere.GetRadius()*0.1f)
 		{
 			++m_idx;
 			NextMove(m_idx);
-			return true; // 목적지 도착. 액션종료.
+			return true; // 목적지 도착. 다음 목적지로 이동
 		}
 
 		// rotation interpolation
@@ -251,10 +252,46 @@ namespace ai
 
 				if (m_waitCount < 10)
 				{
-					out = curPos; // 현재 위치로 유지, 종료
+					//out = curPos; // 현재 위치로 유지, 종료
+					out = pos;
 					return true;
 				}
 			}
+
+
+			// 충돌 위치 계산
+			// 충돌한 유닛과 가깝다면, 충돌 위치에서 대기하고, 상대유닛을 이동시킨다.
+			const cZealot *zealot = dynamic_cast<const cZealot*>(result.node);
+			const float r = result.bsphere.GetRadius() + srcBSphere.GetRadius();
+			if (zealot)
+			{
+				// 바운딩박스 크기를 감안해서, 위치를 조정한다.
+				// todo: 벽을 뚫고 나갈 수 있음.
+				Vector3 p0 = result.bsphere.GetPos();
+				Vector3 p1 = pos;
+				p0.y = p1.y = 0.f;
+				out = (p1 - p0).Normal() * r * 1.1f + p0;
+
+				if (zealot->m_brain->IsCurrentAction(eActionType::MOVE))
+				{
+					// 현재 위치에서 대기
+					return true;
+				}
+				else
+				{
+					// 막은 유닛을 이동하게 한다.
+					sMsg msg;
+					msg.sender = m_agent->m_brain;
+					msg.receiver = zealot->m_brain;
+					msg.msg = eMsgType::UNIT_SIDEMOVE;
+					msg.v = m_dest;
+					m_agent->m_brain->PostMsg(msg);
+
+					// 현재 위치에서 대기
+					return true;
+				}
+			}
+
 		}
 
 		// 대기 횟수 초기화
@@ -285,7 +322,7 @@ namespace ai
 			const Ray ray(pos + Vector3(0, srcBSphere.GetPos().y, 0), dirs[i]);
 			float len = FLT_MAX;
 			sCollisionResult colResult;
-			const int cResult = g_ai.IsCollisionByRay(ray, m_agent
+			const int colltype = g_ai.IsCollisionByRay(ray, m_agent
 				, srcBSphere.GetRadius(), colResult);
 			const bool isBlock = (colResult.distance < (srcBSphere.GetRadius() * 1.3f));
 
@@ -294,8 +331,8 @@ namespace ai
 			m_agent->m_dirs[i].dir = dirs[i];
 			m_agent->m_dirs[i].len = colResult.distance;
 			
-			if (isBlock)
-				continue; // 장애물이 있으면, 해당 방향은 무시
+			if (isBlock && (colltype == 2))
+				continue; // 장애물이 있으면, 해당 방향은 무시, 벽일 때만
 
 			// 이동 경로와 가장 가까운 방향을 선택한다.
 			const Vector3 movPos = pos + dirs[i] * srcBSphere.GetRadius();
@@ -304,11 +341,11 @@ namespace ai
 			{
 				dirIdx = i;
 				minLen = dist;
-				collisionType = cResult;
+				collisionType = colltype;
 				collisionNode = colResult.node;
-				if (1 == cResult)
+				if (1 == colltype)
 					collisionBSphere = colResult.bsphere;
-				else if (2 == cResult)
+				else if (2 == colltype)
 					collisionBPlane = colResult.bplane;
 			}
 		}
@@ -320,12 +357,10 @@ namespace ai
 			return true;
 		}
 
-		// 목적지가 유닛에 의해 막혀있고, 유닛이 정지한 상태라면, 이동을 멈춘다.
 		if (1 == collisionType)
 		{
-			//if (const cZealot *zealot = dynamic_cast<const cZealot*>(collisionNode))
-			//	if (!zealot->m_brain->IsCurrentAction(eActionType::GROUP_MOVE))
-			//		return false;
+			// 유닛이 길을 가로막고 있다면, ~~
+			// nothing~
 		}
 
 		const Vector3 newDir = dirs[dirIdx];

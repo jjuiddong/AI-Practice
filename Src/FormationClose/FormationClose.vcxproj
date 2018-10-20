@@ -192,6 +192,8 @@
     <ClInclude Include="..\ai\unitmove2.h" />
     <ClInclude Include="..\ai\move2.h" />
     <ClInclude Include="..\ai\patrol.h" />
+    <ClInclude Include="..\ai\unitaction.h" />
+    <ClInclude Include="..\ai\unitsidemove.h" />
     <ClInclude Include="..\ai\zealot.h" />
     <ClInclude Include="..\ai\zealotbrain.h" />
     <ClInclude Include="..\ai\zealotgroup.h" />

@@ -31,7 +31,7 @@ namespace ai
 
 
 	public:
-		enum { MAX_PLAYER = 5 };
+		enum { MAX_PLAYER = 10 };
 		vector<cZealot*> m_zealots;
 		vector<cZealot*> m_select; // reference
 		ai::cNavigationMesh m_navi;

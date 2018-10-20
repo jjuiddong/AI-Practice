@@ -61,6 +61,12 @@
     <ClInclude Include="..\ai\groupmove.h">
       <Filter>ai</Filter>
     </ClInclude>
+    <ClInclude Include="..\ai\unitaction.h">
+      <Filter>ai</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ai\unitsidemove.h">
+      <Filter>ai</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ai">

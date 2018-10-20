@@ -38,6 +38,7 @@ public:
 	graphic::cTextManager m_nodeTextMgr;
 	graphic::cRect2D m_rect2D;
 	graphic::cDbgFrustum m_dbgFrustum;
+	graphic::cGridLine m_grid;
 
 	cGroup m_group;
 	bool m_isWireframe;

@@ -14,9 +14,10 @@ namespace ai
 	{
 	public:
 		cGroupMove(T *agent, const Vector3 &dest) 
-			: cAction<T>(agent)
+			: cAction<T>(agent, "group move")
 			, m_dest(dest)
 		{
+			int a = 0;
 		}
 
 		virtual bool StartAction() override;
@@ -32,18 +33,17 @@ namespace ai
 	template<class T>
 	bool cGroupMove<T>::StartAction()
 	{
-		Vector3 center;
-		for (auto &p : m_agent->m_brain->m_children.m_Seq)
-		{
-			cBrain<cZealot> *brain = dynamic_cast<cBrain<cZealot>*>(p);
-			center += brain->m_agent->m_transform.pos;
-		}
-		center /= m_agent->m_brain->m_children.size();
+		//Vector3 center;
+		//for (auto &p : m_agent->m_brain->m_children.m_Seq)
+		//{
+		//	cBrain<cZealot> *brain = dynamic_cast<cBrain<cZealot>*>(p);
+		//	center += brain->m_agent->m_transform.pos;
+		//}
+		//center /= m_agent->m_brain->m_children.size();
 
 		ai::cNavigationMesh &navi = g_ai.m_navi;
 
 		vector<Vector3> path;
-		vector<int> nodePath;
 		for (auto &p : m_agent->m_brain->m_children.m_Seq)
 		{
 			cBrain<cZealot> *brain = dynamic_cast<cBrain<cZealot>*>(p);
@@ -51,9 +51,11 @@ namespace ai
 				continue;
 
 			path.clear();
-			nodePath.clear();
-			if (navi.Find(brain->m_agent->m_transform.pos, m_dest, path, nodePath))
-				brain->SetAction(new ai::cUnitMove<cZealot>(brain->m_agent, path, Vector3(0, 0, 0)));
+			if (navi.Find(brain->m_agent->m_transform.pos, m_dest, path))
+			{
+				brain->SetAction(new ai::cUnitAction<cZealot>(brain->m_agent));
+				brain->PushAction(new ai::cUnitMove2<cZealot>(brain->m_agent, path, Vector3(0, 0, 0)));
+			}
 		}
 
 		return false; // action finish

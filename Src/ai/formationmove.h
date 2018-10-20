@@ -1,6 +1,10 @@
 //
 // 2018-10-15, jjuiddong
-// Group Formation Move
+// cGroup object Formation Move
+//	- children is zealot
+//	- initialize formation
+//	- command zealot to formation position
+//	- after initialize formation, change cGroupMove action
 //
 #pragma once
 
@@ -45,19 +49,17 @@ namespace ai
 		// build formation
 		m_formation.Create(m_dest, g_ai.m_select);
 
-		// move action
+		// move to formation position
 		ai::cNavigationMesh &navi = g_ai.m_navi;
 		vector<Vector3> path;
-		vector<int> nodePath;
 		for (auto &kv : m_formation.m_units)
 		{
 			cZealot *zealot = kv.second.unit;
 			const Vector3 &dest = m_formation.m_pos + kv.second.pos;
 
 			path.clear();
-			nodePath.clear();
-			if (navi.Find(zealot->m_transform.pos, dest, path, nodePath))
-				zealot->m_brain->SetAction(new ai::cUnitMove<cZealot>(zealot, path, Vector3(0, 0, 0)));
+			if (navi.Find(zealot->m_transform.pos, dest, path))
+				zealot->m_brain->SetAction(new ai::cUnitMove2<cZealot>(zealot, path, Vector3(0, 0, 0)));
 		}
 
 		return true;
@@ -75,7 +77,7 @@ namespace ai
 		const float dt = m_incT;
 		m_incT = 0;
 
-		// formation이 어느정도 잡혔다면, 이동한다.
+		// formation이 어느정도 잡혔다면, m_dest로 이동한다.
 		int cnt = 0;
 		for (auto &kv : m_formation.m_units)
 		{

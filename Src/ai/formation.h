@@ -41,7 +41,7 @@ namespace ai
 
 
 	public:
-		Vector3 m_pos;
+		Vector3 m_pos; // formation center position
 		Vector3 m_dir;
 		int m_rows; // row count
 		int m_cols; // column count

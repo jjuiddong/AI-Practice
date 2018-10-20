@@ -208,7 +208,7 @@ int cAiGlobal::IsCollisionByRay(const Ray &ray
 
 		cBoundingSphere bsphere = zealot->m_boundingSphere * zealot->m_transform;
 		float distance = FLT_MAX;
-		if (bsphere.Pick(ray, &distance))
+		if (bsphere.Intersects(ray, radius, &distance))
 		{
 			if (mostNearLen1 > distance)
 			{

@@ -1,6 +1,7 @@
 //
 // 2017-10-20, jjuiddong
-// 이동 행동.
+// Move Action
+// old version move action
 //
 #pragma once
 

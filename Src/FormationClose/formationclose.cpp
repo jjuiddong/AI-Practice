@@ -11,8 +11,8 @@ cViewer::cViewer()
 	, m_isDragRect(false)
 {
 	m_windowName = L"Formation Close";
-	const RECT r = { 0, 0, 1024, 768 };
-	//const RECT r = { 0, 0, 1280, 1024 };
+	//const RECT r = { 0, 0, 1024, 768 };
+	const RECT r = { 0, 0, 1280, 1024 };
 	m_windowRect = r;
 	m_moveLen = 0;
 	m_LButtonDown = false;
@@ -24,6 +24,7 @@ cViewer::cViewer()
 cViewer::~cViewer()
 {
 	graphic::ReleaseRenderer();
+	ai::Clear();
 }
 
 
@@ -41,7 +42,9 @@ bool cViewer::OnInit()
 	io.Fonts->AddFontFromFileTTF(path1.utf8().c_str(), 15, NULL, io.Fonts->GetGlyphRangesKorean());
 
 	cTerrainLoader loader(&m_terrain);
-	loader.Read(m_renderer, "../media2/wall2.trn");
+	loader.Read(m_renderer, "../media2/wall3.trn");
+	
+	m_grid.Create(m_renderer, 50, 50, 1, 1);
 
 	// get all wall
 	for (auto &tile : m_terrain.m_tiles)
@@ -74,7 +77,7 @@ bool cViewer::OnInit()
 
 	m_ccsm.Create(m_renderer);
 
-	if (!g_ai.m_navi.ReadFromPathFile("../media2/wallnavi4.txt"))
+	if (!g_ai.m_navi.ReadFromPathFile("../media2/wall3navi.txt"))
 	{
 		::MessageBoxA(m_hWnd, "Error Read Navigation Mesh file", "Error", MB_OK);
 		return false;
@@ -87,13 +90,16 @@ bool cViewer::OnInit()
 		cZealot *zealot = new cZealot();
 		zealot->Create(m_renderer);
 		zealot->m_name.Format("Zealot%d", i);
-		zealot->m_transform.pos = Vector3(0.6f*(i % 5) - 2.f, 0, 0.6f*(i / 5));
+		zealot->m_transform.pos = Vector3(1.6f*(i % 5) - 2.f, 0, 1.6f*(i / 5));
 		m_terrain.AddModel(zealot);
 		g_ai.m_zealots.push_back(zealot);
 	}
 
 	for (auto &p : g_ai.m_zealots)
+	{
 		m_group.m_brain->AddBrain(p->m_brain);
+		p->m_brain->SetAction(new ai::cUnitAction<cZealot>(p));
+	}
 
 	m_nodeLineList.Create(m_renderer, 128);
 	MakeLineList(m_renderer, g_ai.m_navi, m_nodeLineList);
@@ -108,6 +114,7 @@ void cViewer::OnUpdate(const float deltaSeconds)
 {
 	GetMainCamera().Update(deltaSeconds);
 	m_terrain.Update(m_renderer, deltaSeconds);
+	ai::Loop(deltaSeconds);
 	m_group.m_brain->Update(deltaSeconds);
 }
 
@@ -133,6 +140,7 @@ void cViewer::OnRender(const float deltaSeconds)
 		m_renderer.GetDevContext()->RSSetState(m_isWireframe ? state.Wireframe() : state.CullCounterClockwise());
 		m_terrain.SetTechnique("ShadowMap");
 		m_terrain.RenderCascadedShadowMap(m_renderer, m_ccsm);
+		m_grid.Render(m_renderer);
 
 		//m_pathLineList.Render(m_renderer);
 
