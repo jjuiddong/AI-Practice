@@ -74,8 +74,25 @@ bool cFormation::Create(const Vector3 &dest, const vector<cZealot*> &units)
 	m_rows = 2;
 	m_cols = 3;
 
+	//Sort(dest, units);
+
 	return true;
 }
+
+
+// sort m_sortUnits, most near dest position
+//void cFormation::Sort(const Vector3 &dest, const vector<cZealot*> &units)
+//{
+//	m_sortUnits = units;
+//
+//	std::sort(m_sortUnits.begin(), m_sortUnits.end()
+//		, [&](cZealot *p0, cZealot *p1) {
+//			const float d1 = p0->m_transform.pos.LengthRoughly(dest);
+//			const float d2 = p1->m_transform.pos.LengthRoughly(dest);
+//			return d1 < d2;
+//		}
+//	);
+//}
 
 
 void cFormation::Clear()

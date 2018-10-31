@@ -18,6 +18,7 @@ extern framework::cGameMain* g_application;
 #include "../ai/unitmove2.h"
 #include "../ai/unitsidemove.h"
 #include "../ai/unitaction.h"
+#include "../ai/dbgai.h"
 #include "formationclose.h"
 
 

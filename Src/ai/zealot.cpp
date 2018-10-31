@@ -55,7 +55,7 @@ bool cZealot::Render(cRenderer &renderer
 		// Render NextPos
 		{
 			Transform tfm = m_transform;
-			tfm.pos = m_nextPos;
+			tfm.pos = m_nextDest;
 			tfm.scale = Vector3(1, 1, 1) * 0.2f;
 			renderer.m_dbgBox.SetBox(tfm);
 			renderer.m_dbgBox.SetColor(cColor::YELLOW);

@@ -42,7 +42,7 @@ public:
 
 	cGroup m_group;
 	bool m_isWireframe;
-
+	 
 	bool m_isDragRect;
 	sf::Vector2i m_clickPt;
 	sf::Vector2i m_curPos;

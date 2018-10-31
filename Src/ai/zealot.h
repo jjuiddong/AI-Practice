@@ -43,5 +43,6 @@ public:
 	};
 	sCandidateDir m_dirs[8];
 	Vector3 m_nextPos;
+	Vector3 m_nextDest;
 	Vector3 m_dir;
 };

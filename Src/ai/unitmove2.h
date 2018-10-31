@@ -155,7 +155,7 @@ namespace ai
 				Vector3 newDir = m_dest - curPos;
 				newDir.y = 0;
 				newDir.Normalize();
-				m_agent->m_isCollisionTurn = false; // for debuggin
+				m_agent->m_isCollisionTurn = false; // for debugging
 
 				const float dot = newDir.DotProduct(m_dir);
 				if (dot < 0.99f)
@@ -170,11 +170,18 @@ namespace ai
 
 				m_dir = newDir;
 			}
+			else
+			{
+				// collision interval time
+				// 현재 위치 유지
+				nextPos = curPos;
+			}
 		}
 
-		m_agent->m_transform.pos = nextPos;
+		//m_agent->m_transform.pos = nextPos;
+		m_agent->m_nextPos = nextPos;
 		m_agent->m_dir = m_dir;
-		m_agent->m_nextPos = m_dest;
+		m_agent->m_nextDest = m_dest;
 
 		m_oldDistance = distance;
 		return true;
@@ -231,13 +238,25 @@ namespace ai
 		if ((1 == result.type) || (3 == result.type))
 		{
 			Vector3 opponentDir;
-			if (const cZealot *zealot = dynamic_cast<const cZealot*>(result.node))
-				if (zealot->m_brain->IsCurrentAction(eActionType::GROUP_MOVE))
-					if (cUnitMove2 *movAction = dynamic_cast<cUnitMove2*>(zealot->m_brain->GetAction()))
-						opponentDir = (movAction->m_dest - movAction->m_agent->m_transform.pos).Normal();
+			cZealot *zealot = dynamic_cast<cZealot*>(result.node);
+			if (!zealot)
+				return true;
+
+			if (zealot->m_brain->IsCurrentAction(eActionType::MOVE))
+				if (cUnitMove2 *movAction = dynamic_cast<cUnitMove2*>(zealot->m_brain->GetAction()))
+					opponentDir = (movAction->m_dest - movAction->m_agent->m_transform.pos).Normal();
 
 			Vector3 toMe = (curPos - result.bsphere.GetPos()).Normal();
 			Vector3 toDest = (m_dest - curPos).Normal();
+
+			// 충돌 위치 계산
+			// 바운딩박스 크기를 감안해서, 위치를 조정한다.
+			// todo: bug 벽을 뚫고 나갈 수 있음.
+			const float r = result.bsphere.GetRadius() + srcBSphere.GetRadius();
+			Vector3 p0 = result.bsphere.GetPos();
+			Vector3 p1 = pos;
+			p0.y = p1.y = 0.f;
+			out = (p1 - p0).Normal() * r + p0;
 
 			// 다른 이동 객체와 충돌 했다면, 
 			// 상대방의 이동 방향과 같다면, 선회하지 않고, 잠깐 기다린다.
@@ -252,46 +271,30 @@ namespace ai
 
 				if (m_waitCount < 10)
 				{
-					//out = curPos; // 현재 위치로 유지, 종료
-					out = pos;
-					return true;
+					//out = pos;
+					return true; // 현재 위치로 유지, 종료
 				}
 			}
 
-
-			// 충돌 위치 계산
-			// 충돌한 유닛과 가깝다면, 충돌 위치에서 대기하고, 상대유닛을 이동시킨다.
-			const cZealot *zealot = dynamic_cast<const cZealot*>(result.node);
-			const float r = result.bsphere.GetRadius() + srcBSphere.GetRadius();
-			if (zealot)
+			if (zealot->m_brain->IsCurrentAction(eActionType::MOVE))
 			{
-				// 바운딩박스 크기를 감안해서, 위치를 조정한다.
-				// todo: 벽을 뚫고 나갈 수 있음.
-				Vector3 p0 = result.bsphere.GetPos();
-				Vector3 p1 = pos;
-				p0.y = p1.y = 0.f;
-				out = (p1 - p0).Normal() * r * 1.1f + p0;
-
-				if (zealot->m_brain->IsCurrentAction(eActionType::MOVE))
-				{
-					// 현재 위치에서 대기
-					return true;
-				}
-				else
-				{
-					// 막은 유닛을 이동하게 한다.
-					sMsg msg;
-					msg.sender = m_agent->m_brain;
-					msg.receiver = zealot->m_brain;
-					msg.msg = eMsgType::UNIT_SIDEMOVE;
-					msg.v = m_dest;
-					m_agent->m_brain->PostMsg(msg);
-
-					// 현재 위치에서 대기
-					return true;
-				}
+				// 가던길 간다.
+				return true;
 			}
+			else
+			{
+				// 대기중인 막은 유닛을 이동하게 한다.
+				sMsg msg;
+				msg.sender = m_agent->m_brain;
+				msg.receiver = zealot->m_brain;
+				msg.msg = eMsgType::UNIT_SIDEMOVE;
+				msg.v = m_dest;
+				m_agent->m_brain->PostMsg(msg);
 
+				// 현재 위치에서 대기
+				m_collisionInterval = 0.f;
+				return true;
+			}
 		}
 
 		// 대기 횟수 초기화

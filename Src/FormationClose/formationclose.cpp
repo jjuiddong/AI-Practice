@@ -90,7 +90,9 @@ bool cViewer::OnInit()
 		cZealot *zealot = new cZealot();
 		zealot->Create(m_renderer);
 		zealot->m_name.Format("Zealot%d", i);
-		zealot->m_transform.pos = Vector3(1.6f*(i % 5) - 2.f, 0, 1.6f*(i / 5));
+		const Vector3 pos = Vector3(1.6f*(i % 5) - 2.f, 0, 1.6f*(i / 5));
+		zealot->m_transform.pos = pos;
+		zealot->m_nextPos = pos;
 		m_terrain.AddModel(zealot);
 		g_ai.m_zealots.push_back(zealot);
 	}
@@ -115,7 +117,12 @@ void cViewer::OnUpdate(const float deltaSeconds)
 	GetMainCamera().Update(deltaSeconds);
 	m_terrain.Update(m_renderer, deltaSeconds);
 	ai::Loop(deltaSeconds);
+
 	m_group.m_brain->Update(deltaSeconds);
+
+	// Update Zealot Pos
+	for (auto zealot : g_ai.m_zealots)
+		zealot->m_transform.pos = zealot->m_nextPos;
 }
 
 
@@ -248,6 +255,8 @@ void cViewer::OnRender(const float deltaSeconds)
 
 		// GUI
 		{
+			ai::ShowDebugWindow();
+
 			bool isOpen = true;
 			ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
 				| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
@@ -255,21 +264,23 @@ void cViewer::OnRender(const float deltaSeconds)
 			ImGui::SetNextWindowSize(ImVec2(500, 100));
 			ImGui::SetNextWindowBgAlpha(0.f);
 			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-			ImGui::Begin("info", &isOpen, flags);
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)"
-				, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::Text("Ctrl + Left or Right Camera Move");
-			ImGui::Checkbox("DebugRender", &m_renderer.m_isDbgRender);
-			ImGui::SameLine();
-			ImGui::Checkbox("Wireframe", &m_isWireframe);
-			if (ImGui::Button("Clear Wall Plane (C)"))
+			if (ImGui::Begin("info", &isOpen, flags))
 			{
-				for (auto &wall : g_ai.m_navi.m_walls)
-					wall.collision = false;
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)"
+					, 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::Text("Ctrl + Left or Right Camera Move");
+				ImGui::Checkbox("DebugRender", &m_renderer.m_isDbgRender);
+				ImGui::SameLine();
+				ImGui::Checkbox("Wireframe", &m_isWireframe);
+				if (ImGui::Button("Clear Wall Plane (C)"))
+				{
+					for (auto &wall : g_ai.m_navi.m_walls)
+						wall.collision = false;
+				}
 			}
-
 			ImGui::End();
 			ImGui::PopStyleColor();
+
 			m_gui.Render();
 		}
 

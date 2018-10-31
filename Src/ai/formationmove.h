@@ -59,7 +59,10 @@ namespace ai
 
 			path.clear();
 			if (navi.Find(zealot->m_transform.pos, dest, path))
-				zealot->m_brain->SetAction(new ai::cUnitMove2<cZealot>(zealot, path, Vector3(0, 0, 0)));
+			{
+				zealot->m_brain->SetAction(new ai::cUnitAction<cZealot>(zealot));
+				zealot->m_brain->PushAction(new ai::cUnitMove2<cZealot>(zealot, path));
+			}
 		}
 
 		return true;

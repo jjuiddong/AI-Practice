@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ai\aiglobal.cpp" />
+    <ClCompile Include="..\ai\dbgai.cpp" />
     <ClCompile Include="..\ai\formation.cpp" />
     <ClCompile Include="..\ai\zealot.cpp" />
     <ClCompile Include="..\ai\zealotbrain.cpp" />
@@ -183,6 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ai\attack.h" />
+    <ClInclude Include="..\ai\dbgai.h" />
     <ClInclude Include="..\ai\define.h" />
     <ClInclude Include="..\ai\aiglobal.h" />
     <ClInclude Include="..\ai\formation.h" />

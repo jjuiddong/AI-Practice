@@ -38,6 +38,7 @@ namespace ai
 
 	protected:
 		inline int MakeKey(const int row, const int col);
+		//void Sort(const Vector3 &dest, const vector<cZealot*> &units);
 
 
 	public:
@@ -53,6 +54,7 @@ namespace ai
 			cZealot *unit;
 		};
 		map<int, sInfo> m_units; //key = col + row*1000
+		//vector<cZealot*> m_sortUnits; // sort unit reference, most near dest position unit
 	};
 
 }
